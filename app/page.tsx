@@ -76,10 +76,16 @@ export default function LandingPage() {
                   1
                 </div>
                 
-                {/* AI-themed visual */}
-                <div className="mb-6 relative h-48 rounded-2xl bg-linear-to-br from-primary/20 via-accent/10 to-primary/5 flex items-center justify-center overflow-hidden">
+                {/* Step 1 visual */}
+                <div className="mb-6 relative h-48 rounded-2xl overflow-hidden">
+                  <Image
+                    src="/step1.jpg"
+                    alt="Express Your Intent"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
                   <div className="absolute inset-0 bg-linear-to-t from-card/80 to-transparent"></div>
-                  <Brain className="h-20 w-20 text-primary relative z-10" />
                   {/* Decorative dots */}
                   <div className="absolute top-4 left-4 h-2 w-2 rounded-full bg-primary/40"></div>
                   <div className="absolute bottom-6 right-6 h-3 w-3 rounded-full bg-accent/40"></div>
@@ -107,18 +113,15 @@ export default function LandingPage() {
                 </div>
                 
                 {/* AI-themed visual */}
-                <div className="mb-6 relative h-48 rounded-2xl bg-linear-to-br from-accent/20 via-primary/10 to-accent/5 flex items-center justify-center overflow-hidden">
+                <div className="mb-6 relative h-48 rounded-2xl overflow-hidden">
+                  <Image
+                    src="/loader.jpg"
+                    alt="AI Processing"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
                   <div className="absolute inset-0 bg-linear-to-t from-card/80 to-transparent"></div>
-                  {/* AI Image */}
-                  <div className="relative h-32 w-32 z-10">
-                    <Image
-                      src="/loader.jpg"
-                      alt="AI Processing"
-                      fill
-                      className="object-cover rounded-full"
-                      priority
-                    />
-                  </div>
                   {/* Animated circuit-like lines */}
                   <div className="absolute inset-0 opacity-20">
                     <div className="absolute top-8 left-8 w-16 h-0.5 bg-accent"></div>
@@ -149,18 +152,15 @@ export default function LandingPage() {
                 </div>
                 
                 {/* On-Chain visual */}
-                <div className="mb-6 relative h-48 rounded-2xl bg-linear-to-br from-primary/20 via-accent/10 to-primary/5 flex items-center justify-center overflow-hidden">
+                <div className="mb-6 relative h-48 rounded-2xl overflow-hidden">
+                  <Image
+                    src="/onchain.jpg"
+                    alt="On-Chain Execution"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
                   <div className="absolute inset-0 bg-linear-to-t from-card/80 to-transparent"></div>
-                  {/* On-Chain Image */}
-                  <div className="relative h-32 w-32 z-10">
-                    <Image
-                      src="/onchain.jpg"
-                      alt="On-Chain Execution"
-                      fill
-                      className="object-cover rounded-full"
-                      priority
-                    />
-                  </div>
                   {/* Secure network nodes */}
                   <div className="absolute inset-0 opacity-20">
                     <div className="absolute top-6 left-1/4 h-3 w-3 rounded-full bg-primary"></div>
@@ -195,45 +195,128 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="border-t border-border px-6 py-20 md:px-12">
-        <div className="mx-auto max-w-5xl">
-          <h3 className="mb-16 text-center text-3xl font-bold text-foreground">
-            Why Intent AI
-          </h3>
+      {/* Features - Timeline */}
+      <section className="relative border-t border-border px-6 py-20 md:px-12 overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent pointer-events-none"></div>
+        
+        <div className="relative mx-auto max-w-4xl">
+          <div className="text-center mb-20">
+            <h3 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Why Intent AI
+            </h3>
+            <p className="text-lg text-muted-foreground">
+              The future of DeFi, built for everyone
+            </p>
+          </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl bg-card p-6 border border-border">
-              <h4 className="mb-2 font-semibold text-foreground">
-                Natural Language Interface
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                No need to understand DeFi protocols. Describe your goals naturally.
-              </p>
+          {/* Timeline */}
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary via-accent to-primary"></div>
+
+            {/* Timeline Item 1 - RIGHT SIDE */}
+            <div className="relative mb-16 group">
+              <div className="flex items-start gap-8">
+                {/* Empty space on left for desktop */}
+                <div className="hidden md:block md:w-1/2"></div>
+                
+                {/* Timeline dot */}
+                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-primary/20 border-4 border-primary flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                    <div className="h-8 w-8 rounded-full bg-primary animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Content on right */}
+                <div className="md:w-1/2 md:pl-12 pl-20">
+                  <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
+                    <h4 className="text-2xl font-bold text-foreground">
+                      Natural Language Interface
+                    </h4>
+                    <p className="text-muted-foreground leading-relaxed">
+                      No need to understand DeFi protocols. Describe your goals naturally and let our AI handle the complexity.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl bg-card p-6 border border-border">
-              <h4 className="mb-2 font-semibold text-foreground">
-                Atomic Execution
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                x402 settlement ensures all-or-nothing execution. No partial failures.
-              </p>
+
+            {/* Timeline Item 2 - LEFT SIDE */}
+            <div className="relative mb-16 group">
+              <div className="flex items-start gap-8">
+                <div className="md:w-1/2 md:pr-12 pl-20 md:pl-0">
+                  <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
+                    <h4 className="text-2xl font-bold text-foreground">
+                      Atomic Execution
+                    </h4>
+                    <p className="text-muted-foreground leading-relaxed">
+                      x402 settlement ensures all-or-nothing execution. No partial failures, no unexpected outcomes.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Timeline dot */}
+                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-accent/20 border-4 border-accent flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                    <div className="h-8 w-8 rounded-full bg-accent animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="hidden md:block md:w-1/2"></div>
+              </div>
             </div>
-            <div className="rounded-xl bg-card p-6 border border-border">
-              <h4 className="mb-2 font-semibold text-foreground">
-                Explainable AI
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Understand exactly what the AI will do before you approve.
-              </p>
+
+            {/* Timeline Item 3 - RIGHT SIDE */}
+            <div className="relative mb-16 group">
+              <div className="flex items-start gap-8">
+                {/* Empty space on left for desktop */}
+                <div className="hidden md:block md:w-1/2"></div>
+                
+                {/* Timeline dot */}
+                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-primary/20 border-4 border-primary flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                    <div className="h-8 w-8 rounded-full bg-primary animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Content on right */}
+                <div className="md:w-1/2 md:pl-12 pl-20">
+                  <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
+                    <h4 className="text-2xl font-bold text-foreground">
+                      Explainable AI
+                    </h4>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Complete transparency. Understand exactly what the AI will do before you approve any transaction.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl bg-card p-6 border border-border">
-              <h4 className="mb-2 font-semibold text-foreground">
-                Scheduled Automation
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Set it once. Your strategy runs weekly or on-demand.
-              </p>
+
+            {/* Timeline Item 4 - LEFT SIDE */}
+            <div className="relative group">
+              <div className="flex items-start gap-8">
+                <div className="md:w-1/2 md:pr-12 pl-20 md:pl-0">
+                  <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
+                    <h4 className="text-2xl font-bold text-foreground">
+                      Scheduled Automation
+                    </h4>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Set it once and let it run. Your strategy executes weekly or on-demand, completely automated.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Timeline dot */}
+                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-accent/20 border-4 border-accent flex items-center justify-center group-hover:scale-125 transition-transform duration-300">
+                    <div className="h-8 w-8 rounded-full bg-accent animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="hidden md:block md:w-1/2"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -256,6 +339,124 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/30 backdrop-blur-sm">
+        <div className="px-6 py-12 md:px-12">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
+              {/* Brand Section */}
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-primary">Intent AI</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Transform your financial intent into on-chain execution. The future of DeFi, powered by AI.
+                </p>
+              </div>
+
+              {/* Product Links */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Product</h4>
+                <ul className="space-y-3">
+                  <li>
+                    <Link href="/app" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Launch App
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      How It Works
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Features
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Resources */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Resources</h4>
+                <ul className="space-y-3">
+                  <li>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Documentation
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      API Reference
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Guides
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Support
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Community */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">Community</h4>
+                <ul className="space-y-3">
+                  <li>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Twitter
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Discord
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      GitHub
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      Telegram
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="mt-12 pt-8 border-t border-border">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  © {new Date().getFullYear()} Intent AI. All rights reserved.
+                </p>
+                <div className="flex gap-6">
+                  <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Privacy Policy
+                  </a>
+                  <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Terms of Service
+                  </a>
+                  <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    Cookie Policy
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
