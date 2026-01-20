@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, AlertCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 export function ExecutionDisplay() {
   const { isExecuting, executionSteps, currentStrategy } = useApp();
@@ -46,7 +47,14 @@ export function ExecutionDisplay() {
                     <CheckCircle2 className="h-6 w-6 text-green-500" />
                   )}
                   {step.status === 'executing' && (
-                    <div className="h-6 w-6 rounded-full border-2 border-primary border-r-transparent animate-spin" />
+                    <div className="relative h-6 w-6">
+                      <Image
+                        src="/loader.jpg"
+                        alt="Loading..."
+                        fill
+                        className="object-contain rounded-full animate-spin"
+                      />
+                    </div>
                   )}
                   {step.status === 'pending' && (
                     <Clock className="h-6 w-6 text-muted-foreground" />
