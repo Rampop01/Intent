@@ -18,8 +18,10 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="px-6 py-20 text-center md:px-12 md:py-32">
-        <div className="mx-auto max-w-4xl space-y-8">
+      <section className="relative px-6 py-20 text-center md:px-12 md:py-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/ai.png)' }}>
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/50 "></div>
+        <div className="relative z-10 mx-auto max-w-4xl space-y-8">
           {/* Main Heading */}
           <div className="space-y-4">
             <h2 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-6xl">
