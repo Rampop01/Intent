@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Zap, Brain, Shield } from 'lucide-react';
+import { CryptoTicker } from '@/components/crypto-ticker';
 
 export default function LandingPage() {
   return (
@@ -46,6 +47,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Crypto Ticker */}
+      <CryptoTicker />
 
       {/* How It Works */}
       <section className="px-6 py-20 md:px-12">
