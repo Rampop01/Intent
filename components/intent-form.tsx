@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InlineLoader } from '@/components/ui/loader';
 
 interface IntentFormProps {
   onStrategyGenerated: () => void;
@@ -144,10 +145,7 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
               size="lg"
             >
               {isProcessing ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  Processing with AI...
-                </>
+                <InlineLoader text="Processing with AI..." />
               ) : (
                 <>
                   Generate Strategy

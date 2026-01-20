@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import styles from './crypto-ticker.module.css';
+import { Loader } from '@/components/ui/loader';
 
 interface CryptoData {
   symbol: string;
@@ -82,10 +83,8 @@ export function CryptoTicker() {
 
   if (isLoading || cryptoData.length === 0) {
     return (
-      <div className="relative w-full overflow-hidden border-y border-border bg-card/30 backdrop-blur-sm py-4">
-        <div className="flex items-center justify-center">
-          <span className="text-sm text-muted-foreground">Loading live crypto prices...</span>
-        </div>
+      <div className="relative w-full overflow-hidden border-y border-border bg-card/30 backdrop-blur-sm py-8">
+        <Loader size="sm" text="Loading live crypto prices..." />
       </div>
     );
   }
