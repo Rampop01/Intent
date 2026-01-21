@@ -8,23 +8,40 @@ export interface ParsedIntent {
     liquid: number;
     growth: number;
   };
-  executionType: 'once' | 'weekly';
+  executionType: 'once' | 'weekly' | 'daily' | 'monthly';
   monitoring: string;
   explanation: string;
+  conditions?: {
+    stopLoss?: number;
+    takeProfit?: number;
+    marketCondition?: string;
+    riskAdjustment?: string;
+  };
 }
 
 /**
  * Parse user intent using OpenAI GPT
- * Converts natural language into a structured strategy
+ * Converts natural language into a structured strategy with conditions
  */
 export async function parseUserIntent(userIntent: string): Promise<ParsedIntent> {
-  const prompt = `You are a financial AI agent. Parse the following user intent and extract:
+  const prompt = `You are an advanced financial AI agent. Parse the following user intent and extract:
+
 1. Amount they want to invest (as a number, default to 500 if not specified)
-2. Risk level (low, medium, or high based on context)
+2. Risk level (low, medium, or high based on context and keywords)
 3. Asset allocation percentages (stable coins, liquid tokens, growth assets) - must sum to 100%
-4. Execution type (once or weekly based on context)
+4. Execution type (once, weekly, daily, or monthly based on context and keywords)
 5. Monitoring frequency (daily, weekly, monthly)
 6. A clear explanation of the strategy
+7. Any conditional logic or risk management rules
+
+Look for these patterns:
+- "if market drops" or "if price falls" → stopLoss condition
+- "take profit when" or "sell if gains" → takeProfit condition  
+- "reduce risk if" or "be more conservative if" → risk adjustment
+- "weekly", "daily", "monthly" → execution frequency
+- "safely", "conservative" → low risk
+- "balanced", "moderate" → medium risk
+- "aggressive", "growth", "risky" → high risk
 
 User intent: "${userIntent}"
 
@@ -37,9 +54,15 @@ Respond in this exact JSON format:
     "liquid": <0-100>,
     "growth": <0-100>
   },
-  "executionType": "<once|weekly>",
+  "executionType": "<once|weekly|daily|monthly>",
   "monitoring": "<daily|weekly|monthly>",
-  "explanation": "<human-readable explanation of the strategy>"
+  "explanation": "<human-readable explanation of the strategy>",
+  "conditions": {
+    "stopLoss": <percentage as number, only if mentioned>,
+    "takeProfit": <percentage as number, only if mentioned>,
+    "marketCondition": "<description if market condition mentioned>",
+    "riskAdjustment": "<description if risk adjustment mentioned>"
+  }
 }`;
 
   try {
@@ -47,7 +70,6 @@ Respond in this exact JSON format:
       model: 'openai/gpt-4o-mini',
       prompt: prompt,
       temperature: 0.7,
-      maxTokens: 500,
     });
 
     // Parse the response
@@ -128,7 +150,6 @@ Make it sound professional and reassuring. Keep it to 2-3 sentences.`;
       model: 'openai/gpt-4o-mini',
       prompt: prompt,
       temperature: 0.7,
-      maxTokens: 200,
     });
 
     return text.trim();

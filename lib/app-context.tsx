@@ -1,23 +1,63 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { X402Order, X402Quote, X402Settlement, x402Client, isX402Enabled } from './x402-client';
 
 export interface Strategy {
   id?: string;
   intent: string;
-  amount: number;
+  amount: string;  // Changed to string for blockchain compatibility
   riskLevel: 'low' | 'medium' | 'high';
   allocation: {
     stable: number;
     liquid: number;
     growth: number;
   };
-  execution: 'once' | 'weekly';
+  execution: 'once' | 'weekly' | 'daily' | 'monthly';
   monitoring: string;
   explanation: string;
-  status?: string;
+  status?: 'pending' | 'approved' | 'executing' | 'completed' | 'failed' | 'paused';
   createdAt?: string;
   txHash?: string;
+  nextExecution?: string;
+  conditions?: StrategyConditions;
+  performance?: StrategyPerformance;
+  // x402 specific fields
+  x402OrderId?: string;
+  x402Enabled?: boolean;
+  x402Quote?: X402Quote;
+  mevProtection?: boolean;
+  crossChain?: boolean;
+  estimatedGas?: string;
+  estimatedTime?: number;
+  gasUsed?: string;
+  executionTime?: number;
+  mevSavings?: string;
+  x402Settlement?: X402Settlement;
+}
+
+export interface StrategyConditions {
+  stopLoss?: number; // Percentage loss to trigger pause
+  takeProfit?: number; // Percentage gain to trigger completion
+  marketCondition?: 'bull' | 'bear' | 'stable';
+  maxDrawdown?: number;
+}
+
+export interface StrategyPerformance {
+  totalReturn: number;
+  totalReturnPercent: number;
+  currentValue: number;
+  lastUpdated: string;
+  executionCount: number;
+}
+
+export interface UpcomingAction {
+  id: string;
+  strategyId: string;
+  strategyName: string;
+  action: 'rebalance' | 'monitor' | 'adjust';
+  scheduledFor: Date;
+  status: 'scheduled' | 'due' | 'overdue';
 }
 
 export interface ExecutionStep {
@@ -26,7 +66,7 @@ export interface ExecutionStep {
   status: 'pending' | 'executing' | 'completed' | 'failed';
   description: string;
   assetType: string;
-  amount: number;
+  amount: number; // Keep as number for UI calculations
 }
 
 export interface ActivityLog {
@@ -51,6 +91,9 @@ interface AppContextType {
   clearStrategy: () => void;
   savedStrategies: Strategy[];
   loadStrategies: () => Promise<void>;
+  pauseStrategy: (strategyId: string) => Promise<void>;
+  resumeStrategy: (strategyId: string) => Promise<void>;
+  modifyStrategy: (strategyId: string, updates: Partial<Strategy>) => Promise<void>;
   
   // Execution
   isExecuting: boolean;
@@ -59,6 +102,21 @@ interface AppContextType {
   
   // Activity Log
   activityLog: ActivityLog[];
+  
+  // Monitoring
+  upcomingActions: UpcomingAction[];
+  loadUpcomingActions: () => Promise<void>;
+  
+  // User Experience
+  showApprovalFlow: boolean;
+  setShowApprovalFlow: (show: boolean) => void;
+
+  // x402 Settlement
+  x402Enabled: boolean;
+  createX402Order: (strategy: Strategy) => Promise<X402Order | null>;
+  executeX402Settlement: (orderId: string) => Promise<X402Settlement | null>;
+  getX402Quote: (strategy: Strategy) => Promise<X402Quote | null>;
+  loadX402Settlements: () => Promise<X402Settlement[]>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,6 +129,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
   const [activityLog, setActivityLog] = useState<ActivityLog[]>([]);
   const [savedStrategies, setSavedStrategies] = useState<Strategy[]>([]);
+  const [upcomingActions, setUpcomingActions] = useState<UpcomingAction[]>([]);
+  const [showApprovalFlow, setShowApprovalFlow] = useState(false);
 
   // Load strategies when wallet connects
   const loadStrategies = useCallback(async () => {
@@ -125,7 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({
             walletAddress,
             intent: strategy.intent,
-            amount: strategy.amount,
+            amount: strategy.amount, // Already a string now
             riskLevel: strategy.riskLevel,
             allocation: strategy.allocation,
             executionType: strategy.execution,
@@ -165,7 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             status: 'pending',
             description: `Deploying ${strategy.allocation.stable}% to stablecoins (USDC/USDT)...`,
             assetType: 'STABLE',
-            amount: (strategy.amount * strategy.allocation.stable) / 100,
+            amount: (parseFloat(strategy.amount) * strategy.allocation.stable) / 100,
           },
           {
             id: '4',
@@ -173,7 +233,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             status: 'pending',
             description: `Deploying ${strategy.allocation.liquid}% to liquid tokens...`,
             assetType: 'LIQUID',
-            amount: (strategy.amount * strategy.allocation.liquid) / 100,
+            amount: (parseFloat(strategy.amount) * strategy.allocation.liquid) / 100,
           },
           {
             id: '5',
@@ -181,7 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             status: 'pending',
             description: `Deploying ${strategy.allocation.growth}% to growth assets (CRO)...`,
             assetType: 'GROWTH',
-            amount: (strategy.amount * strategy.allocation.growth) / 100,
+            amount: (parseFloat(strategy.amount) * strategy.allocation.growth) / 100,
           },
           {
             id: '6',
@@ -243,6 +303,180 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [walletAddress, loadStrategies]
   );
 
+  // Load upcoming actions
+  const loadUpcomingActions = useCallback(async () => {
+    if (!walletAddress) return;
+
+    try {
+      const response = await fetch(`/api/upcoming-actions?wallet=${walletAddress}`);
+      const actions = await response.json();
+      setUpcomingActions(actions || []);
+    } catch (error) {
+      console.error('[v0] Failed to load upcoming actions:', error);
+    }
+  }, [walletAddress]);
+
+  // Pause strategy
+  const pauseStrategy = useCallback(async (strategyId: string) => {
+    try {
+      const response = await fetch(`/api/strategies/${strategyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'paused' }),
+      });
+
+      if (response.ok) {
+        await loadStrategies();
+        await loadUpcomingActions();
+      }
+    } catch (error) {
+      console.error('[v0] Failed to pause strategy:', error);
+    }
+  }, [loadStrategies, loadUpcomingActions]);
+
+  // Resume strategy
+  const resumeStrategy = useCallback(async (strategyId: string) => {
+    try {
+      const response = await fetch(`/api/strategies/${strategyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'approved' }),
+      });
+
+      if (response.ok) {
+        await loadStrategies();
+        await loadUpcomingActions();
+      }
+    } catch (error) {
+      console.error('[v0] Failed to resume strategy:', error);
+    }
+  }, [loadStrategies, loadUpcomingActions]);
+
+  // Modify strategy
+  const modifyStrategy = useCallback(async (strategyId: string, updates: Partial<Strategy>) => {
+    try {
+      const response = await fetch(`/api/strategies/${strategyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (response.ok) {
+        await loadStrategies();
+        await loadUpcomingActions();
+      }
+    } catch (error) {
+      console.error('[v0] Failed to modify strategy:', error);
+    }
+  }, [loadStrategies, loadUpcomingActions]);
+
+  // x402 Settlement Methods
+  const x402Enabled = isX402Enabled();
+
+  // Create x402 order
+  const createX402Order = useCallback(async (strategy: Strategy): Promise<X402Order | null> => {
+    if (!walletAddress) return null;
+
+    try {
+      console.log('[x402] Creating order for strategy:', strategy);
+      
+      const response = await fetch('/api/x402-settlement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: strategy.intent,
+          amount: strategy.amount,
+          allocation: strategy.allocation,
+          walletAddress,
+          executionType: strategy.execution,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create x402 order');
+      }
+
+      return result.order;
+    } catch (error) {
+      console.error('[x402] Error creating order:', error);
+      return null;
+    }
+  }, [walletAddress]);
+
+  // Execute x402 settlement
+  const executeX402Settlement = useCallback(async (orderId: string): Promise<X402Settlement | null> => {
+    if (!walletAddress) return null;
+
+    try {
+      console.log('[x402] Executing settlement for order:', orderId);
+      
+      const response = await fetch('/api/x402-settlement', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          walletAddress,
+        }),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to execute x402 settlement');
+      }
+
+      return result.settlement;
+    } catch (error) {
+      console.error('[x402] Error executing settlement:', error);
+      return null;
+    }
+  }, [walletAddress]);
+
+  // Get x402 quote
+  const getX402Quote = useCallback(async (strategy: Strategy): Promise<X402Quote | null> => {
+    try {
+      console.log('[x402] Getting quote for strategy:', strategy);
+      
+      const response = await fetch('/api/x402-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: strategy.intent,
+          amount: strategy.amount,
+          allocation: strategy.allocation,
+          walletAddress,
+        }),
+      });
+
+      const quote = await response.json();
+      if (!quote.orderId) {
+        throw new Error('Invalid quote response');
+      }
+
+      return quote;
+    } catch (error) {
+      console.error('[x402] Error getting quote:', error);
+      return null;
+    }
+  }, [walletAddress]);
+
+  // Load x402 settlements
+  const loadX402Settlements = useCallback(async (): Promise<X402Settlement[]> => {
+    if (!walletAddress) return [];
+
+    try {
+      console.log('[x402] Loading settlements for wallet:', walletAddress);
+      
+      const response = await fetch(`/api/x402-settlement?wallet=${walletAddress}`);
+      const result = await response.json();
+      
+      return result.settlements || [];
+    } catch (error) {
+      console.error('[x402] Error loading settlements:', error);
+      return [];
+    }
+  }, [walletAddress]);
+
   const value: AppContextType = {
     walletConnected,
     walletAddress,
@@ -251,12 +485,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     currentStrategy,
     setStrategy: setCurrentStrategy,
     clearStrategy: () => setCurrentStrategy(null),
+    savedStrategies,
+    loadStrategies,
+    pauseStrategy,
+    resumeStrategy,
+    modifyStrategy,
     isExecuting,
     executionSteps,
     executeStrategy,
     activityLog,
-    savedStrategies,
-    loadStrategies,
+    upcomingActions,
+    loadUpcomingActions,
+    showApprovalFlow,
+    setShowApprovalFlow,
+    // x402 methods
+    x402Enabled,
+    createX402Order,
+    executeX402Settlement,
+    getX402Quote,
+    loadX402Settlements,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

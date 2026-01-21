@@ -1,20 +1,67 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
 import { IntentForm } from '@/components/intent-form';
 import { StrategyDisplay } from '@/components/strategy-display';
+import { StrategyApproval } from '@/components/strategy-approval';
 import { ExecutionDisplay } from '@/components/execution-display';
+import { UserOnboarding } from '@/components/user-onboarding';
 import { Button } from '@/components/ui/button';
 
 export default function AppPage() {
-  const { walletConnected, walletAddress, currentStrategy, isExecuting, executeStrategy, disconnectWallet } = useApp();
+  const { 
+    walletConnected, 
+    walletAddress, 
+    currentStrategy, 
+    isExecuting, 
+    executeStrategy, 
+    disconnectWallet,
+    showApprovalFlow,
+    setShowApprovalFlow,
+    clearStrategy
+  } = useApp();
+  
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  async function handleExecute() {
+  // Check if user is new (simplified - in real app, check localStorage or user profile)
+  useEffect(() => {
+    if (walletConnected && !localStorage.getItem('onboarding_completed')) {
+      setShowOnboarding(true);
+    }
+  }, [walletConnected]);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('onboarding_completed', 'true');
+    setShowOnboarding(false);
+  };
+
+  const handleStrategyGenerated = () => {
+    setShowApprovalFlow(true);
+  };
+
+  const handleApprove = async () => {
     if (currentStrategy) {
+      setShowApprovalFlow(false);
       await executeStrategy(currentStrategy);
     }
+  };
+
+  const handleModify = () => {
+    setShowApprovalFlow(false);
+    // Keep the strategy but allow modification
+  };
+
+  const handleCancel = () => {
+    setShowApprovalFlow(false);
+    clearStrategy();
+  };
+
+  // Show onboarding for new users
+  if (showOnboarding && walletConnected) {
+    return <UserOnboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (
@@ -49,21 +96,32 @@ export default function AppPage() {
               {/* Left: Intent Input */}
               <div>
                 <div className="sticky top-24">
-                  <IntentForm onStrategyGenerated={() => {}} />
+                  <IntentForm onStrategyGenerated={handleStrategyGenerated} />
                 </div>
               </div>
 
-              {/* Right: Strategy Preview & Execution */}
+              {/* Right: Strategy Preview, Approval & Execution */}
               <div>
                 <div className="space-y-4">
-                  {currentStrategy ? (
+                  {showApprovalFlow && currentStrategy ? (
+                    <StrategyApproval
+                      strategy={currentStrategy}
+                      onApprove={handleApprove}
+                      onCancel={handleCancel}
+                      onModify={handleModify}
+                    />
+                  ) : currentStrategy ? (
                     <>
-                      <StrategyDisplay onExecute={handleExecute} />
-                      {(isExecuting || currentStrategy) && <ExecutionDisplay />}
+                      <StrategyDisplay onExecute={() => setShowApprovalFlow(true)} />
+                      {isExecuting && <ExecutionDisplay />}
                     </>
                   ) : (
                     <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground">
-                      Enter your financial intent on the left to generate a strategy
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold text-foreground">Ready to Start</h3>
+                        <p>Enter your financial intent on the left, or speak your goal using the microphone button.</p>
+                        <p className="text-sm">Our AI will create a personalized strategy for you to review and approve.</p>
+                      </div>
                     </div>
                   )}
                 </div>

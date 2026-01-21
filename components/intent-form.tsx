@@ -2,14 +2,15 @@
 
 import React from 'react';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, AlertCircle, Mic, MicOff, Volume2, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InlineLoader } from '@/components/ui/loader';
+import { createVoiceService, getVoiceServiceStatus, VoiceService, VoiceServiceStatus } from '@/lib/voice-service';
+import { InlineLoader } from './ui/loader';
 
 interface IntentFormProps {
   onStrategyGenerated: () => void;
@@ -19,7 +20,7 @@ interface IntentFormProps {
 const PRESET_STRATEGIES = {
   safe_save: {
     intent: 'Save $200 safely with minimal risk',
-    amount: 200,
+    amount: '200', // Convert to string
     riskLevel: 'low' as const,
     allocation: { stable: 85, liquid: 15, growth: 0 },
     execution: 'once' as const,
@@ -29,7 +30,7 @@ const PRESET_STRATEGIES = {
   },
   balanced_invest: {
     intent: 'Invest $500 with balanced growth and risk',
-    amount: 500,
+    amount: '500', // Convert to string
     riskLevel: 'medium' as const,
     allocation: { stable: 40, liquid: 30, growth: 30 },
     execution: 'weekly' as const,
@@ -39,7 +40,7 @@ const PRESET_STRATEGIES = {
   },
   aggressive_growth: {
     intent: 'Deploy $1000 aggressively for maximum growth',
-    amount: 1000,
+    amount: '1000', // Convert to string
     riskLevel: 'high' as const,
     allocation: { stable: 10, liquid: 20, growth: 70 },
     execution: 'weekly' as const,
@@ -54,6 +55,91 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
   const [intent, setIntent] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Voice input state
+  const [isRecording, setIsRecording] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [transcribedText, setTranscribedText] = useState('');
+  const [showTranscription, setShowTranscription] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const voiceServiceRef = useRef<VoiceService | null>(null);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceServiceStatus | null>(null);
+
+  // Check for voice support and initialize service
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const status = getVoiceServiceStatus();
+      setVoiceStatus(status);
+      console.log('[Voice] Service status:', status);
+    }
+  }, []);
+
+  // Initialize voice service with hybrid approach
+  useEffect(() => {
+    if (!voiceStatus?.isSupported) return;
+
+    // Create voice service with configuration
+    voiceServiceRef.current = createVoiceService({
+      onTranscript: (transcript: string, isFinal: boolean) => {
+        setTranscribedText(transcript);
+        if (isFinal && transcript.trim()) {
+          setShowTranscription(true);
+        }
+      },
+      onError: (error: string) => {
+        setIsListening(false);
+        setIsRecording(false);
+        setVoiceError(error);
+      },
+      onStart: () => {
+        setIsListening(true);
+        setVoiceError(null);
+      },
+      onEnd: () => {
+        setIsListening(false);
+        setIsRecording(false);
+      }
+    });
+
+    return () => {
+      if (voiceServiceRef.current) {
+        voiceServiceRef.current.stop();
+      }
+    };
+  }, [voiceStatus]);
+
+  const startVoiceInput = async () => {
+    if (!voiceServiceRef.current) return;
+    
+    setTranscribedText('');
+    setShowTranscription(false);
+    setVoiceError(null);
+    setIsRecording(true);
+    
+    try {
+      await voiceServiceRef.current.start();
+    } catch (error) {
+      console.error('[Voice] Start error:', error);
+      setIsRecording(false);
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (voiceServiceRef.current) {
+      voiceServiceRef.current.stop();
+    }
+  };
+
+  const confirmTranscription = () => {
+    setIntent(transcribedText);
+    setShowTranscription(false);
+    setTranscribedText('');
+  };
+
+  const cancelTranscription = () => {
+    setTranscribedText('');
+    setShowTranscription(false);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +168,7 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
 
       setStrategy({
         intent,
-        amount: parsedIntent.amount,
+        amount: parsedIntent.amount.toString(), // Convert to string
         riskLevel: parsedIntent.riskLevel,
         allocation: parsedIntent.allocation,
         execution: parsedIntent.executionType,
@@ -118,6 +204,65 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
         </Alert>
       )}
 
+      {/* Voice Error Alert */}
+      {voiceError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{voiceError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Voice Service Status Info */}
+      {voiceStatus && !voiceStatus.isSupported && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Voice input not available:</strong> {voiceStatus.reason || 'Speech recognition not supported in your browser.'}
+            {' '}Text input works perfectly as an alternative.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Deepgram Service Info for Brave users */}
+      {voiceStatus?.provider === 'Deepgram' && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Enhanced Voice Support:</strong> Using Deepgram for better compatibility with your browser.
+            Voice input will work seamlessly with improved accuracy.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Transcription Preview */}
+      {showTranscription && (
+        <Card className="border-accent">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Volume2 className="h-4 w-4" />
+              Voice Input Preview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Here's what we heard you say. Please confirm if this is correct:
+            </p>
+            <div className="bg-muted p-3 rounded-lg">
+              <p className="text-sm">{transcribedText}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={confirmTranscription} size="sm" className="gap-2">
+                <ArrowRight className="h-3 w-3" />
+                Use This Text
+              </Button>
+              <Button onClick={cancelTranscription} variant="outline" size="sm">
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Intent Input */}
       <Card className="border-2 border-border">
         <CardHeader>
@@ -126,18 +271,47 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
             Express Your Intent
           </CardTitle>
           <CardDescription>
-            Describe what you want to do with your money. Our AI will parse your intent and create a strategy.
+            Describe what you want to do with your money by typing or speaking. Our AI will parse your intent and create a strategy.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              placeholder="e.g., Save $200 safely, invest $500 with balanced risk, deploy $1000 aggressively for weekly rebalancing..."
-              value={intent}
-              onChange={(e) => setIntent(e.target.value)}
-              disabled={!walletConnected || isProcessing}
-              className="min-h-24 resize-none"
-            />
+            <div className="relative">
+              <Textarea
+                placeholder="e.g., Save $200 safely, invest $500 with balanced risk, deploy $1000 aggressively for weekly rebalancing..."
+                value={intent}
+                onChange={(e) => setIntent(e.target.value)}
+                disabled={!walletConnected || isProcessing}
+                className="min-h-24 resize-none pr-14"
+              />
+              {voiceStatus?.isSupported && (
+                <div className="absolute right-2 top-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={isRecording ? stopVoiceInput : startVoiceInput}
+                    disabled={!walletConnected || isProcessing || showTranscription}
+                    className={`p-2 h-8 w-8 ${isRecording ? 'text-red-500 animate-pulse' : 'text-muted-foreground hover:text-primary'}`}
+                  >
+                    {isRecording ? (
+                      <MicOff className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </Button>
+                  {isListening && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                  )}
+                </div>
+              )}
+            </div>
+            {isRecording && (
+              <div className="flex items-center gap-2 text-sm text-red-600">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                Listening... Speak your financial goal
+              </div>
+            )}
             <Button
               type="submit"
               disabled={!intent.trim() || !walletConnected || isProcessing}
@@ -162,7 +336,7 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
         <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Quick Templates</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           <Button
-            variant={currentStrategy?.amount === 200 ? 'default' : 'outline'}
+            variant={currentStrategy?.amount === '200' ? 'default' : 'outline'}
             onClick={() => handlePreset('safe_save')}
             disabled={!walletConnected}
             className="flex-col items-start h-auto p-4"
@@ -171,7 +345,7 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
             <div className="text-xs opacity-75">$200, Low Risk</div>
           </Button>
           <Button
-            variant={currentStrategy?.amount === 500 ? 'default' : 'outline'}
+            variant={currentStrategy?.amount === '500' ? 'default' : 'outline'}
             onClick={() => handlePreset('balanced_invest')}
             disabled={!walletConnected}
             className="flex-col items-start h-auto p-4"
@@ -180,7 +354,7 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
             <div className="text-xs opacity-75">$500, Medium Risk</div>
           </Button>
           <Button
-            variant={currentStrategy?.amount === 1000 ? 'default' : 'outline'}
+            variant={currentStrategy?.amount === '1000' ? 'default' : 'outline'}
             onClick={() => handlePreset('aggressive_growth')}
             disabled={!walletConnected}
             className="flex-col items-start h-auto p-4"
