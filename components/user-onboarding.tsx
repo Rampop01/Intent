@@ -61,30 +61,30 @@ export function UserOnboarding({ onComplete }: OnboardingProps) {
           <h3 className="text-lg font-semibold text-center">Two Ways to Tell Us What You Want</h3>
           
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="p-4 border rounded-lg">
+            <div className="p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-3 mb-3">
                 <BookOpen className="h-5 w-5 text-blue-500" />
-                <h4 className="font-medium">Type Your Goal</h4>
+                <h4 className="font-medium text-foreground">Type Your Goal</h4>
               </div>
               <p className="text-sm text-muted-foreground mb-3">
                 Write what you want to do in the text box.
               </p>
               <div className="bg-muted p-3 rounded-lg">
-                <p className="text-xs font-mono">"Save $200 safely"</p>
-                <p className="text-xs font-mono">"Invest $500 with balanced risk"</p>
+                <p className="text-xs font-mono text-foreground">"Save $200 safely"</p>
+                <p className="text-xs font-mono text-foreground">"Invest $500 with balanced risk"</p>
               </div>
             </div>
 
-            <div className="p-4 border rounded-lg">
+            <div className="p-4 border border-border rounded-lg bg-card">
               <div className="flex items-center gap-3 mb-3">
                 <Mic className="h-5 w-5 text-green-500" />
-                <h4 className="font-medium">Speak Your Goal</h4>
+                <h4 className="font-medium text-foreground">Speak Your Goal</h4>
               </div>
               <p className="text-sm text-muted-foreground mb-3">
                 Click the microphone button and speak naturally.
               </p>
               <div className="bg-muted p-3 rounded-lg">
-                <p className="text-xs">🎤 Press and speak your intent</p>
+                <p className="text-xs text-foreground">🎤 Press and speak your intent</p>
                 <p className="text-xs text-muted-foreground">Review before submitting</p>
               </div>
             </div>
@@ -109,30 +109,30 @@ export function UserOnboarding({ onComplete }: OnboardingProps) {
           <h3 className="text-lg font-semibold text-center">Nothing Happens Without Your Approval</h3>
           
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-sm">AI Creates a Plan</h4>
+                <h4 className="font-medium text-sm text-foreground">AI Creates a Plan</h4>
                 <p className="text-xs text-muted-foreground">
                   Our AI analyzes your intent and creates a detailed strategy
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <Shield className="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-sm">You Review Everything</h4>
+                <h4 className="font-medium text-sm text-foreground">You Review Everything</h4>
                 <p className="text-xs text-muted-foreground">
                   See exactly how your money will be allocated and why
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
               <Play className="h-5 w-5 text-purple-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-sm">You Give Final Approval</h4>
+                <h4 className="font-medium text-sm text-foreground">You Give Final Approval</h4>
                 <p className="text-xs text-muted-foreground">
                   Only when you're satisfied, we execute the strategy
                 </p>
@@ -140,11 +140,11 @@ export function UserOnboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
 
-          <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
-            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+          <div className="bg-accent/20 border border-accent/40 p-4 rounded-lg">
+            <p className="text-sm font-medium text-foreground">
               You can modify or cancel at any time
             </p>
-            <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Change allocations, pause strategies, or stop recurring actions whenever you want.
             </p>
           </div>

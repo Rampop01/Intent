@@ -1,6 +1,6 @@
 # Intent AI - Production-Ready DeFi Intent Settlement Platform
 
-**Status: FULLY REAL - No Dummy Data, Real Database, Real AI, Real Smart Contract**
+
 
 A complete, production-ready web application that transforms natural language financial intents into on-chain execution plans using OpenAI GPT, Supabase PostgreSQL, and Solidity smart contracts on Cronos EVM.
 
@@ -12,6 +12,15 @@ A complete, production-ready web application that transforms natural language fi
 - **AI**: OpenAI GPT-4o-mini via Vercel AI Gateway
 - **Smart Contract**: Solidity (ERC20 compatible, Cronos ready)
 - **Blockchain**: Cronos EVM
+- **Development**: Foundry (Forge, Cast, Anvil)
+
+##  Live Deployment
+
+**Smart Contract (Cronos Testnet):**
+- **Address:** `0xd9fc6cC979472A5FA52750ae26805462E1638872`
+- **Network:** Cronos Testnet (Chain ID: 338)
+- **Explorer:** [View on Cronoscan](https://testnet.cronoscan.com/address/0xd9fc6cC979472A5FA52750ae26805462E1638872)
+- **Status:** Deployed and Verified
 
 ## Project Structure
 
@@ -140,26 +149,38 @@ Review & Approve → Execute Strategy → Activity Recorded → View Dashboard
 
 **Location**: `/contracts/IntentSettlement.sol`
 
+**Deployed Contract (Cronos Testnet)**:
+- **Address:** `0xd9fc6cC979472A5FA52750ae26805462E1638872`
+- **Network:** Cronos Testnet (Chain ID: 338)
+- **Explorer:** [View on Cronoscan](https://testnet.cronoscan.com/address/0xd9fc6cC979472A5FA52750ae26805462E1638872)
+- **ABI:** `abi/IntentSettlement.json`
+
 **Features**:
-- ERC20 token support (for USDC, USDT, CRO, etc.)
-- Strategy execution with atomic settlement
-- Multi-asset allocation support
-- User-specific strategy tracking
-- Reentrancy protection (OpenZeppelin)
-- SafeERC20 for safe token transfers
+- ✅ ERC20 token support (USDC, USDT, DAI, CRO)
+- ✅ Strategy creation with natural language intent storage
+- ✅ Atomic strategy execution
+- ✅ Multi-asset allocation (stable/liquid/growth)
+- ✅ User-specific strategy tracking
+- ✅ Execution history and steps
+- ✅ Reentrancy protection (OpenZeppelin)
+- ✅ SafeERC20 for secure token transfers
+- ✅ Event emission for frontend tracking
 
 **Key Functions**:
 ```solidity
-- createStrategy(amount, riskLevel, allocation) - Create strategy
-- executeStrategy(strategyId) - Execute atomic settlement
-- getStrategy(strategyId) - Retrieve strategy details
-- executeStep(strategyId, stepNumber) - Execute single step
+createStrategy(amount, riskLevel, intent, allocations, executionType) → strategyId
+executeStrategy(strategyId, inputToken) → bool
+getStrategy(strategyId) → Strategy
+getUserStrategies(userAddress) → strategyId[]
+getExecutionSteps(strategyId) → ExecutionStep[]
+getUserStrategyCount(userAddress) → uint256
 ```
 
-**Deployment**:
-- Ready for Cronos testnet/mainnet
-- Uses OpenZeppelin contracts
-- Compatible with Uniswap/1inch for swaps
+**Deployment Tools**:
+-  Built with Foundry (Forge)
+-  Uses OpenZeppelin v5 contracts
+-  Tested with Foundry test suite
+-  Deployed to Cronos Testnet
 
 ## Preset Strategies
 
@@ -269,12 +290,12 @@ npm start
 
 ## Already Implemented (Not TODO)
 
-✅ **Supabase Database** - PostgreSQL with RLS policies  
-✅ **Real OpenAI AI** - GPT-4o-mini parsing via Vercel AI Gateway  
-✅ **Smart Contract** - Solidity IntentSettlement.sol ready to deploy  
-✅ **Sidebar Navigation** - Full responsive navigation  
-✅ **Real API Routes** - Actual backend endpoints for data persistence  
-✅ **Activity Logging** - Complete audit trail in database  
+ **Supabase Database** - PostgreSQL with RLS policies  
+ **Real OpenAI AI** - GPT-4o-mini parsing via Vercel AI Gateway  
+ **Smart Contract** - Solidity IntentSettlement.sol ready to deploy  
+ **Sidebar Navigation** - Full responsive navigation  
+ **Real API Routes** - Actual backend endpoints for data persistence  
+ **Activity Logging** - Complete audit trail in database  
 
 ## Next Steps for Mainnet
 
@@ -318,5 +339,3 @@ GET /api/strategies?wallet=0x...
 
 ---
 
-**Status**: ✅ **PRODUCTION READY** - Real data, real AI, real database, no dummy data  
-**Last Updated**: January 2026
