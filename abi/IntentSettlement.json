@@ -1,0 +1,739 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_usdc",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_usdt",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_dai",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_cro",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "assetRegistry",
+    "inputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "createStrategy",
+    "inputs": [
+      {
+        "name": "_amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_riskLevel",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "_intent",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "_stablePercent",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_liquidPercent",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_growthPercent",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_executionType",
+        "type": "uint8",
+        "internalType": "enum IntentSettlement.ExecutionType"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "croAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "daiAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "emergencyWithdraw",
+    "inputs": [
+      {
+        "name": "_token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "executeStrategy",
+    "inputs": [
+      {
+        "name": "_strategyId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_inputToken",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "executionSteps",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "stepId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "stepNumber",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "assetType",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "targetAsset",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "executed",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "executedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getExecutionSteps",
+    "inputs": [
+      {
+        "name": "_strategyId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct IntentSettlement.ExecutionStep[]",
+        "components": [
+          {
+            "name": "stepId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "stepNumber",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "assetType",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "targetAsset",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "executed",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "executedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getStrategy",
+    "inputs": [
+      {
+        "name": "_strategyId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IntentSettlement.Strategy",
+        "components": [
+          {
+            "name": "strategyId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "user",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "riskLevel",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "intent",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "allocation",
+            "type": "tuple",
+            "internalType": "struct IntentSettlement.AllocationBreakdown",
+            "components": [
+              {
+                "name": "stablePercent",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "liquidPercent",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "growthPercent",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "executionType",
+            "type": "uint8",
+            "internalType": "enum IntentSettlement.ExecutionType"
+          },
+          {
+            "name": "createdAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "executed",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "executedAt",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserStrategies",
+    "inputs": [
+      {
+        "name": "_user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32[]",
+        "internalType": "bytes32[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserStrategyCount",
+    "inputs": [
+      {
+        "name": "_user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "strategies",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "strategyId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "riskLevel",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "intent",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "allocation",
+        "type": "tuple",
+        "internalType": "struct IntentSettlement.AllocationBreakdown",
+        "components": [
+          {
+            "name": "stablePercent",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "liquidPercent",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "growthPercent",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "executionType",
+        "type": "uint8",
+        "internalType": "enum IntentSettlement.ExecutionType"
+      },
+      {
+        "name": "createdAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "executed",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "executedAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateAssetRegistry",
+    "inputs": [
+      {
+        "name": "_assetName",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "_assetAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "usdcAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "usdtAddress",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userStrategies",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "ExecutionCompleted",
+    "inputs": [
+      {
+        "name": "strategyId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "success",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ExecutionStarted",
+    "inputs": [
+      {
+        "name": "strategyId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "stepCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "StepExecuted",
+    "inputs": [
+      {
+        "name": "strategyId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "stepNumber",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "success",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "StrategyCreated",
+    "inputs": [
+      {
+        "name": "strategyId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "riskLevel",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "intent",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SafeERC20FailedOperation",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]
