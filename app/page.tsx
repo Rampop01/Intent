@@ -8,7 +8,7 @@ import { CryptoTicker } from '@/components/crypto-ticker';
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-linear-to-b from-background to-background">
+    <main className="min-h-screen">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-6 py-4 md:px-12">
         <h1 className="text-2xl font-bold text-primary">Intent AI</h1>
@@ -22,7 +22,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative px-6 py-20 text-center md:px-12 md:py-32 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/ai.png)' }}>
         {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/50 "></div>
+        <div className="absolute inset-0 bg-black/50"></div>
         <div className="relative z-10 mx-auto max-w-4xl space-y-8">
           {/* Main Heading */}
           <div className="space-y-4">
@@ -49,6 +49,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Rest of page with landbg.jpg background */}
+      <div className="relative bg-cover bg-center bg-fixed bg-no-repeat" style={{ backgroundImage: 'url(/landbg.jpg)' }}>
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/75"></div>
+        
+        {/* Shiny gradient overlay */}
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.1) 100%)'
+          }}
+        ></div>
+        
+        {/* Radial shine effects */}
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.12) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.1) 0%, transparent 50%)'
+          }}
+        ></div>
+        
+        {/* Subtle glossy reflection */}
+        <div 
+          className="absolute inset-0" 
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%)'
+          }}
+        ></div>
+        
+        {/* Content */}
+        <div className="relative z-10">
       {/* Crypto Ticker */}
       <CryptoTicker />
 
@@ -202,10 +233,10 @@ export default function LandingPage() {
         
         <div className="relative mx-auto max-w-4xl">
           <div className="text-center mb-20">
-            <h3 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h3 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
               Why Intent AI
             </h3>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-white/90 drop-shadow-md">
               The future of DeFi, built for everyone
             </p>
           </div>
@@ -231,10 +262,10 @@ export default function LandingPage() {
                 {/* Content on right */}
                 <div className="md:w-1/2 md:pl-12 pl-20">
                   <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
-                    <h4 className="text-2xl font-bold text-foreground">
+                    <h4 className="text-2xl font-bold text-white drop-shadow-lg">
                       Natural Language Interface
                     </h4>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-white/90 leading-relaxed drop-shadow-md">
                       No need to understand DeFi protocols. Describe your goals naturally and let our AI handle the complexity.
                     </p>
                   </div>
@@ -247,10 +278,10 @@ export default function LandingPage() {
               <div className="flex items-start gap-8">
                 <div className="md:w-1/2 md:pr-12 pl-20 md:pl-0">
                   <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
-                    <h4 className="text-2xl font-bold text-foreground">
+                    <h4 className="text-2xl font-bold text-white drop-shadow-lg">
                       Atomic Execution
                     </h4>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-white/90 leading-relaxed drop-shadow-md">
                       x402 settlement ensures all-or-nothing execution. No partial failures, no unexpected outcomes.
                     </p>
                   </div>
@@ -283,10 +314,10 @@ export default function LandingPage() {
                 {/* Content on right */}
                 <div className="md:w-1/2 md:pl-12 pl-20">
                   <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
-                    <h4 className="text-2xl font-bold text-foreground">
+                    <h4 className="text-2xl font-bold text-white drop-shadow-lg">
                       Explainable AI
                     </h4>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-white/90 leading-relaxed drop-shadow-md">
                       Complete transparency. Understand exactly what the AI will do before you approve any transaction.
                     </p>
                   </div>
@@ -299,10 +330,10 @@ export default function LandingPage() {
               <div className="flex items-start gap-8">
                 <div className="md:w-1/2 md:pr-12 pl-20 md:pl-0">
                   <div className="space-y-2 transition-all duration-300 group-hover:scale-105">
-                    <h4 className="text-2xl font-bold text-foreground">
+                    <h4 className="text-2xl font-bold text-white drop-shadow-lg">
                       Scheduled Automation
                     </h4>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-white/90 leading-relaxed drop-shadow-md">
                       Set it once and let it run. Your strategy executes weekly or on-demand, completely automated.
                     </p>
                   </div>
@@ -457,6 +488,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+        </div>
+      </div>
     </main>
   );
 }
