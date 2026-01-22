@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { X402Order, X402Quote, X402Settlement, x402Client, isX402Enabled } from './x402-client';
+import { priceOracle, TokenBalances } from './price-oracle';
+import { balanceService } from './balance-service';
 
 // Demo contract addresses for Cronos Testnet (for future production use)
 const DEMO_CONTRACTS = {
@@ -94,6 +96,12 @@ interface AppContextType {
   connectWallet: (address: string) => Promise<void>;
   disconnectWallet: () => void;
   
+  // Balances & Pricing
+  userBalances: TokenBalances;
+  tcroPrice: number;
+  refreshBalances: () => Promise<void>;
+  validateBalance: (usdAmount: string) => Promise<{ sufficient: boolean; required: string; available: string; deficit?: string }>;
+  
   // Strategy
   currentStrategy: Strategy | null;
   setStrategy: (strategy: Strategy) => void;
@@ -148,6 +156,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [upcomingActions, setUpcomingActions] = useState<UpcomingAction[]>([]);
   const [showApprovalFlow, setShowApprovalFlow] = useState(false);
 
+  // New state for balances and pricing
+  const [userBalances, setUserBalances] = useState<TokenBalances>({
+    tcro: '0',
+    usdc: '0', 
+    usdt: '0'
+  });
+  const [tcroPrice, setTcroPrice] = useState<number>(0.16);
+
   // Load strategies when wallet connects
   const loadStrategies = useCallback(async () => {
     if (!walletAddress) return;
@@ -162,12 +178,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [walletAddress]);
 
-  // Load strategies on mount and when wallet changes
+  // Refresh user balances and TCRO price
+  const refreshBalances = useCallback(async () => {
+    if (!walletAddress) return;
+
+    try {
+      console.log('[v0] Refreshing balances and price for:', walletAddress);
+      
+      // Fetch current TCRO price
+      const currentPrice = await priceOracle.getTCROPrice();
+      setTcroPrice(currentPrice);
+      
+      // Fetch user balances
+      const balances = await balanceService.getUserBalances(walletAddress);
+      setUserBalances(balances);
+      
+      console.log('[v0] Updated - TCRO price:', currentPrice, 'Balances:', balances);
+    } catch (error) {
+      console.error('[v0] Failed to refresh balances:', error);
+    }
+  }, [walletAddress]);
+
+  // Validate if user has sufficient balance for strategy
+  const validateBalance = useCallback(async (usdAmount: string) => {
+    if (!walletAddress) {
+      return { sufficient: false, required: '0', available: '0' };
+    }
+    return await balanceService.validateSufficientBalance(walletAddress, usdAmount);
+  }, [walletAddress]);
+
+  // Load strategies and balances on mount and when wallet changes
   useEffect(() => {
     if (walletConnected && walletAddress) {
       loadStrategies();
+      refreshBalances();
+    } else {
+      // Clear balances when wallet disconnected
+      setUserBalances({ tcro: '0', usdc: '0', usdt: '0' });
     }
-  }, [walletConnected, walletAddress, loadStrategies]);
+  }, [walletConnected, walletAddress, loadStrategies, refreshBalances]);
 
   const connectWallet = useCallback(async (address: string) => {
     console.log('[v0] Wallet connection handled by wagmi:', address);
@@ -193,8 +242,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Validate sufficient balance before execution
+      const balanceCheck = await validateBalance(strategy.amount);
+      if (!balanceCheck.sufficient) {
+        const deficit = balanceCheck.deficit || '0';
+        throw new Error(`Insufficient TCRO balance. Need ${balanceCheck.required} TCRO, but you have ${balanceCheck.available} TCRO. Deficit: ${deficit} TCRO`);
+      }
+
       setIsExecuting(true);
       console.log('[v0] Starting execution for strategy:', strategy);
+      console.log('[v0] Balance validation passed - Required:', balanceCheck.required, 'Available:', balanceCheck.available);
 
       try {
         // Save strategy to Supabase
@@ -220,7 +277,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const savedStrategy = await saveResponse.json();
         console.log('[v0] Strategy saved:', savedStrategy.id);
 
-        // Initialize execution steps
+        // Initialize execution steps with real TCRO amounts
+        const requiredTCRO = await priceOracle.convertUSDToTCRO(strategy.amount);
         const steps: ExecutionStep[] = [
           {
             id: '1',
@@ -234,7 +292,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             id: '2',
             name: 'Calculate Allocation',
             status: 'pending',
-            description: 'Computing optimal asset allocation...',
+            description: `Computing optimal allocation for ${priceOracle.formatTCROAmount(requiredTCRO)} (≈${priceOracle.formatUSDAmount(strategy.amount)})...`,
             assetType: 'calculation',
             amount: 0,
           },
@@ -242,25 +300,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             id: '3',
             name: 'Allocate to Stable Assets',
             status: 'pending',
-            description: `Deploying ${strategy.allocation.stable}% to stablecoins (USDC/USDT)...`,
+            description: `Deploying ${strategy.allocation.stable}% (${priceOracle.formatTCROAmount((parseFloat(requiredTCRO) * strategy.allocation.stable) / 100)}) to stablecoins...`,
             assetType: 'STABLE',
-            amount: (parseFloat(strategy.amount) * strategy.allocation.stable) / 100,
+            amount: (parseFloat(requiredTCRO) * strategy.allocation.stable) / 100,
           },
           {
             id: '4',
             name: 'Allocate to Liquid Assets',
             status: 'pending',
-            description: `Deploying ${strategy.allocation.liquid}% to liquid tokens...`,
+            description: `Deploying ${strategy.allocation.liquid}% (${priceOracle.formatTCROAmount((parseFloat(requiredTCRO) * strategy.allocation.liquid) / 100)}) to liquid tokens...`,
             assetType: 'LIQUID',
-            amount: (parseFloat(strategy.amount) * strategy.allocation.liquid) / 100,
+            amount: (parseFloat(requiredTCRO) * strategy.allocation.liquid) / 100,
           },
           {
             id: '5',
             name: 'Allocate to Growth Assets',
             status: 'pending',
-            description: `Deploying ${strategy.allocation.growth}% to growth assets (CRO)...`,
+            description: `Staking ${strategy.allocation.growth}% (${priceOracle.formatTCROAmount((parseFloat(requiredTCRO) * strategy.allocation.growth) / 100)}) with validators...`,
             assetType: 'GROWTH',
-            amount: (parseFloat(strategy.amount) * strategy.allocation.growth) / 100,
+            amount: (parseFloat(requiredTCRO) * strategy.allocation.growth) / 100,
           },
           {
             id: '6',
@@ -320,13 +378,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               console.log(`[v0] Demo transaction for ${steps[i].name} (${steps[i].assetType})`);
               const contractAddress = getContractAddress(steps[i].assetType);
               
+              // Use actual TCRO amounts for transactions
+              const tcroAmount = steps[i].amount > 0 ? steps[i].amount.toString() : '0.001';
+              console.log(`[v0] Transaction amount: ${tcroAmount} TCRO`);
+              
               const txHash = await sendTransactionAsync({
                 to: contractAddress,
-                value: parseEther('0.001'), // Small test amount (0.001 TCRO)
+                value: parseEther(tcroAmount), // Real TCRO amount based on allocation
                 data: '0x' // In production: encoded contract function calls
               });
 
               console.log('[v0] Transaction completed:', txHash);
+              
+              // Refresh balances after transaction
+              await refreshBalances();
               
             } catch (error) {
               console.error('[v0] Wallet transaction error:', error);
@@ -617,6 +682,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     walletAddress,
     connectWallet,
     disconnectWallet,
+    // Balances & Pricing
+    userBalances,
+    tcroPrice,
+    refreshBalances,
+    validateBalance,
     currentStrategy,
     setStrategy,
     clearStrategy: () => setCurrentStrategy(null),

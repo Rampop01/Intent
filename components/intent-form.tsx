@@ -19,34 +19,34 @@ interface IntentFormProps {
 // Preset strategies
 const PRESET_STRATEGIES = {
   safe_save: {
-    intent: 'Save $200 safely with minimal risk',
-    amount: '200', // Convert to string
+    intent: 'Save safely with minimal risk (TCRO equivalent of $200)',
+    amount: '200', // Will be converted to TCRO equivalent
     riskLevel: 'low' as const,
     allocation: { stable: 85, liquid: 15, growth: 0 },
     execution: 'once' as const,
     monitoring: 'monthly',
     explanation:
-      'Conservative strategy focusing on capital preservation. 85% in stablecoins (USDC/USDT), 15% in liquid tokens.',
+      'Conservative strategy focusing on capital preservation. 85% swapped to stablecoins (USDC/USDT), 15% in liquid tokens.',
   },
   balanced_invest: {
-    intent: 'Invest $500 with balanced growth and risk',
-    amount: '500', // Convert to string
+    intent: 'Invest with balanced growth and risk (TCRO equivalent of $500)',
+    amount: '500', // Will be converted to TCRO equivalent
     riskLevel: 'medium' as const,
     allocation: { stable: 40, liquid: 30, growth: 30 },
     execution: 'weekly' as const,
     monitoring: 'weekly',
     explanation:
-      'Balanced approach for steady growth. 40% stablecoins, 30% liquid tokens, 30% growth assets with weekly rebalancing.',
+      'Balanced approach for steady growth. 40% to stablecoins, 30% liquid tokens, 30% staked for rewards.',
   },
   aggressive_growth: {
-    intent: 'Deploy $1000 aggressively for maximum growth',
-    amount: '1000', // Convert to string
+    intent: 'Deploy aggressively for maximum growth (TCRO equivalent of $1000)',
+    amount: '1000', // Will be converted to TCRO equivalent
     riskLevel: 'high' as const,
     allocation: { stable: 10, liquid: 20, growth: 70 },
     execution: 'weekly' as const,
     monitoring: 'daily',
     explanation:
-      'Growth-focused strategy for experienced investors. 10% stablecoins, 20% liquid, 70% growth assets with daily monitoring.',
+      'Growth-focused strategy for experienced investors. 10% stablecoins, 20% liquid, 70% staked with validators.',
   },
 };
 

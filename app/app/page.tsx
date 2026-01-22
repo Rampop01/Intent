@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
@@ -9,6 +10,7 @@ import { StrategyDisplay } from '@/components/strategy-display';
 import { StrategyApproval } from '@/components/strategy-approval';
 import { ExecutionDisplay } from '@/components/execution-display';
 import { UserOnboarding } from '@/components/user-onboarding';
+import { BalanceDisplay } from '@/components/balance-display';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -104,7 +106,16 @@ export default function AppPage() {
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
           <div className="px-4 py-4 md:px-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-foreground">New Strategy</h1>
-            {walletConnected && <WalletConnect />}
+            <div className="flex items-center gap-3">
+              {walletConnected && (
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">
+                    View Dashboard
+                  </Button>
+                </Link>
+              )}
+              {walletConnected && <WalletConnect />}
+            </div>
           </div>
         </header>
 

@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Activity,
+  PieChart,
+  Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -27,10 +29,16 @@ export function Sidebar({ onLogout, walletAddress }: SidebarProps) {
 
   const navItems = [
     {
-      label: 'Dashboard',
+      label: 'Create Intent',
       href: '/app',
-      icon: Home,
+      icon: Target,
       active: pathname === '/app',
+    },
+    {
+      label: 'Dashboard',
+      href: '/dashboard',
+      icon: PieChart,
+      active: pathname === '/dashboard',
     },
     {
       label: 'Strategies',

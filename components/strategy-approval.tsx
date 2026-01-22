@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Strategy } from '@/lib/app-context';
 import { x402Client, X402Quote, isX402Enabled } from '@/lib/x402-client';
+import { priceOracle } from '@/lib/price-oracle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BalanceDisplay } from '@/components/balance-display';
+import { useApp } from '@/lib/app-context';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -35,10 +38,32 @@ interface StrategyApprovalProps {
 }
 
 export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: StrategyApprovalProps) {
+  const { validateBalance, tcroPrice, userBalances } = useApp();
   const [isApproving, setIsApproving] = useState(false);
   const [x402Quote, setX402Quote] = useState<X402Quote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [x402Error, setX402Error] = useState<string | null>(null);
+  const [balanceCheck, setBalanceCheck] = useState<{
+    sufficient: boolean;
+    required: string;
+    available: string;
+    deficit?: string;
+    tcroEquivalent?: string;
+  } | null>(null);
+
+  // Check balance when component loads
+  useEffect(() => {
+    const checkBalance = async () => {
+      const check = await validateBalance(strategy.amount);
+      const tcroEquivalent = await priceOracle.convertUSDToTCRO(strategy.amount);
+      setBalanceCheck({
+        ...check,
+        tcroEquivalent
+      });
+    };
+    
+    checkBalance();
+  }, [strategy.amount, validateBalance]);
 
   // Load x402 quote when component mounts
   useEffect(() => {
@@ -101,6 +126,21 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
 
   return (
     <div className="space-y-6">
+      {/* Balance Display */}
+      <BalanceDisplay />
+
+      {/* Balance Validation Alert */}
+      {balanceCheck && !balanceCheck.sufficient && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Insufficient Balance!</strong> You need {priceOracle.formatTCROAmount(balanceCheck.required)} TCRO 
+            (≈{priceOracle.formatUSDAmount(strategy.amount)}) but only have {priceOracle.formatTCROAmount(balanceCheck.available)} TCRO.
+            {balanceCheck.deficit && ` Deficit: ${priceOracle.formatTCROAmount(balanceCheck.deficit)} TCRO.`}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card className="border-2 border-accent">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -117,8 +157,18 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
               <DollarSign className="h-5 w-5 text-primary" />
               <div>
-                <p className="font-semibold">${strategy.amount.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">Investment Amount</p>
+                <p className="font-semibold">
+                  {balanceCheck?.tcroEquivalent ? 
+                    `${priceOracle.formatTCROAmount(balanceCheck.tcroEquivalent)}` : 
+                    `$${strategy.amount}`
+                  }
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {balanceCheck?.tcroEquivalent ? 
+                    `≈ $${strategy.amount}` : 
+                    'Investment Amount'
+                  }
+                </p>
               </div>
             </div>
             
@@ -169,12 +219,15 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
               <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-200">
                 <div>
                   <p className="font-medium">Stable Assets (USDC, USDT)</p>
-                  <p className="text-sm text-muted-foreground">Low risk, stable value preservation</p>
+                  <p className="text-sm text-muted-foreground">Swap TCRO → stablecoins for stability</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-green-700">{strategy.allocation.stable}%</p>
                   <p className="text-sm text-muted-foreground">
-                    ${((parseFloat(strategy.amount) * strategy.allocation.stable) / 100).toLocaleString()}
+                    {balanceCheck?.tcroEquivalent ? 
+                      `${priceOracle.formatTCROAmount((parseFloat(balanceCheck.tcroEquivalent) * strategy.allocation.stable) / 100)}` :
+                      `$${((parseFloat(strategy.amount) * strategy.allocation.stable) / 100).toLocaleString()}`
+                    }
                   </p>
                 </div>
               </div>
@@ -182,25 +235,31 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
               <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/5 border border-blue-200">
                 <div>
                   <p className="font-medium">Liquid Tokens</p>
-                  <p className="text-sm text-muted-foreground">Medium risk, tradeable assets</p>
+                  <p className="text-sm text-muted-foreground">TCRO → tradeable DeFi tokens</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-blue-700">{strategy.allocation.liquid}%</p>
                   <p className="text-sm text-muted-foreground">
-                    ${((parseFloat(strategy.amount) * strategy.allocation.liquid) / 100).toLocaleString()}
+                    {balanceCheck?.tcroEquivalent ? 
+                      `${priceOracle.formatTCROAmount((parseFloat(balanceCheck.tcroEquivalent) * strategy.allocation.liquid) / 100)}` :
+                      `$${((parseFloat(strategy.amount) * strategy.allocation.liquid) / 100).toLocaleString()}`
+                    }
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/5 border border-purple-200">
                 <div>
-                  <p className="font-medium">Growth Assets (CRO, etc.)</p>
-                  <p className="text-sm text-muted-foreground">Higher risk, growth potential</p>
+                  <p className="font-medium">Growth Assets (Staking)</p>
+                  <p className="text-sm text-muted-foreground">Stake TCRO with validators for rewards</p>
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-purple-700">{strategy.allocation.growth}%</p>
                   <p className="text-sm text-muted-foreground">
-                    ${((parseFloat(strategy.amount) * strategy.allocation.growth) / 100).toLocaleString()}
+                    {balanceCheck?.tcroEquivalent ? 
+                      `${priceOracle.formatTCROAmount((parseFloat(balanceCheck.tcroEquivalent) * strategy.allocation.growth) / 100)}` :
+                      `$${((parseFloat(strategy.amount) * strategy.allocation.growth) / 100).toLocaleString()}`
+                    }
                   </p>
                 </div>
               </div>
@@ -378,7 +437,7 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
           <div className="flex flex-col sm:flex-row gap-3">
             <Button 
               onClick={handleApprove} 
-              disabled={isApproving}
+              disabled={isApproving || (balanceCheck ? !balanceCheck.sufficient : false)}
               className="flex-1 gap-2"
               size="lg"
             >
@@ -386,6 +445,11 @@ export function StrategyApproval({ strategy, onApprove, onCancel, onModify }: St
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                   Executing Strategy...
+                </>
+              ) : (balanceCheck && !balanceCheck.sufficient) ? (
+                <>
+                  <AlertTriangle className="h-4 w-4" />
+                  Insufficient Balance
                 </>
               ) : (
                 <>
