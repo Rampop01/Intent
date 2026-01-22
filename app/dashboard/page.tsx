@@ -3,11 +3,16 @@
 import { useApp } from '@/lib/app-context';
 import { ActivityTimeline } from '@/components/activity-timeline';
 import { WalletConnect } from '@/components/wallet-connect';
+import { PortfolioHoldings } from '@/components/portfolio-holdings';
+import { X402SettlementDisplay } from '@/components/x402-settlement-display';
+import { WithdrawalManager } from '@/components/withdrawal-manager';
+import { BalanceDisplay } from '@/components/balance-display';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -108,6 +113,46 @@ export default function DashboardPage() {
             Monitor your strategies, performance, and upcoming actions
           </p>
         </div>
+
+        {/* Balance Overview - Always visible when wallet connected */}
+        {walletConnected && (
+          <Card className="mb-8 bg-linear-to-r from-primary/5 to-accent/5 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Your Wallet Balance</h3>
+                  <BalanceDisplay />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Invested Amount</h3>
+                  <div className="text-3xl font-bold text-accent">
+                    ${totalDeployed.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Currently in strategies</p>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Total Performance</h3>
+                  <div className={`text-3xl font-bold ${avgPerformancePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {avgPerformancePercent >= 0 ? '+' : ''}{avgPerformancePercent.toFixed(2)}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    ${totalPerformance >= 0 ? '+' : ''}{totalPerformance.toLocaleString()} total
+                  </p>
+                </div>
+              </div>
+              <Separator className="my-4" />
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-3">
+                  💡 Your money is working for you across multiple DeFi protocols. Use the "Withdraw Funds" tab below to get your money back anytime.
+                </p>
+                <Button variant="outline" className="gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Withdraw Your Funds
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!walletConnected ? (
           <div className="text-center space-y-6 py-16">
@@ -304,6 +349,30 @@ export default function DashboardPage() {
                 </Card>
               </div>
             )}
+
+            {/* Investment Tracking Tabs */}
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <PieChart className="h-5 w-5" />
+                Investment Tracking
+              </h2>
+              <Tabs defaultValue="portfolio" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="portfolio">Portfolio Holdings</TabsTrigger>
+                  <TabsTrigger value="withdraw">Withdraw Funds</TabsTrigger>
+                  <TabsTrigger value="settlements">x402 Settlements</TabsTrigger>
+                </TabsList>
+                <TabsContent value="portfolio" className="mt-6">
+                  <PortfolioHoldings />
+                </TabsContent>
+                <TabsContent value="withdraw" className="mt-6">
+                  <WithdrawalManager />
+                </TabsContent>
+                <TabsContent value="settlements" className="mt-6">
+                  <X402SettlementDisplay />
+                </TabsContent>
+              </Tabs>
+            </div>
 
             {/* Activity Timeline */}
             <div>
