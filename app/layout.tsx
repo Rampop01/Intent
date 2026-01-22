@@ -2,7 +2,10 @@ import React from "react"
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { headers } from 'next/headers'
+import ContextProvider from '@/context'
 import { AppProvider } from '@/lib/app-context'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -31,17 +34,23 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const headersObj = await headers()
+  const cookies = headersObj.get('cookie')
+
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <AppProvider>
-          {children}
-        </AppProvider>
+        <ContextProvider cookies={cookies}>
+          <AppProvider>
+            {children}
+            <Toaster />
+          </AppProvider>
+        </ContextProvider>
         <Analytics />
       </body>
     </html>

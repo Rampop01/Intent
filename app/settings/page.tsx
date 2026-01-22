@@ -150,16 +150,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <>
+    <div className="flex min-h-screen bg-background">
       <Sidebar onLogout={disconnectWallet} walletAddress={walletAddress || undefined} />
       
-      <main className="min-h-screen bg-background">
+      <main className="flex-1 lg:ml-64">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <div className="px-4 py-4 md:px-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your preferences and account settings</p>
+          <div className="px-6 py-8 flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold text-foreground">Settings</h1>
+              <p className="text-lg text-muted-foreground">Manage your preferences and account settings</p>
             </div>
             <div className="flex items-center gap-3">
               {hasChanges && (
@@ -178,12 +178,16 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               )}
-              {walletConnected && <WalletConnect />}
+              {walletConnected && (
+                <div className="hidden md:block">
+                  <WalletConnect />
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        <div className="px-4 md:px-6 py-8">
+        <div className="px-6 py-8">
           {!walletConnected ? (
             <div className="text-center space-y-6 py-16">
               <div className="space-y-2">
@@ -655,6 +659,6 @@ export default function SettingsPage() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }

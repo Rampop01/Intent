@@ -82,7 +82,7 @@ export function Sidebar({ onLogout, walletAddress }: SidebarProps) {
       <aside
         className={cn(
           'fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-200 lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
@@ -146,9 +146,6 @@ export function Sidebar({ onLogout, walletAddress }: SidebarProps) {
           </div>
         </div>
       </aside>
-
-      {/* Main content wrapper - adds left margin on large screens */}
-      <div className="lg:ml-64" />
     </>
   );
 }

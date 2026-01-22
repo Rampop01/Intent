@@ -1,7 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
 import { X402Order, X402Quote, X402Settlement, x402Client, isX402Enabled } from './x402-client';
+
+// Demo contract addresses for Cronos Testnet (for future production use)
+const DEMO_CONTRACTS = {
+  USDC: '0x0000000000000000000000000000000000000001', // Mock USDC contract
+  DEX_ROUTER: '0x0000000000000000000000000000000000000002', // Mock DEX router
+  CRO_TOKEN: '0x0000000000000000000000000000000000000003', // Mock CRO token
+} as const;
 
 export interface Strategy {
   id?: string;
@@ -122,8 +131,15 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  // Get real wallet connection status from wagmi
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { sendTransactionAsync } = useSendTransaction();
+  
+  // Sync wagmi state with app state
+  const walletConnected = wagmiConnected;
+  const walletAddress = wagmiAddress || null;
+  
   const [currentStrategy, setCurrentStrategy] = useState<Strategy | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
@@ -154,21 +170,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [walletConnected, walletAddress, loadStrategies]);
 
   const connectWallet = useCallback(async (address: string) => {
-    console.log('[v0] Connecting wallet:', address);
-    setWalletAddress(address);
-    setWalletConnected(true);
+    console.log('[v0] Wallet connection handled by wagmi:', address);
+    // No need to manually set state - wagmi handles this
   }, []);
 
   const disconnectWallet = useCallback(() => {
-    console.log('[v0] Disconnecting wallet');
-    setWalletConnected(false);
-    setWalletAddress(null);
+    console.log('[v0] Disconnecting wallet via wagmi');
+    wagmiDisconnect();
     setCurrentStrategy(null);
     setSavedStrategies([]);
-  }, []);
+  }, [wagmiDisconnect]);
 
   const executeStrategy = useCallback(
     async (strategy: Strategy) => {
+      if (!strategy) {
+        console.error('[v0] No strategy provided for execution');
+        return;
+      }
+      
       if (!walletAddress) {
         console.error('[v0] No wallet connected');
         return;
@@ -255,19 +274,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         setExecutionSteps(steps);
 
-        // Simulate step-by-step execution
+        // Actually execute wallet transactions instead of just simulating
+        
         for (let i = 0; i < steps.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
-
+          // Update current step to executing
           setExecutionSteps(prevSteps => {
             const newSteps = [...prevSteps];
-            newSteps[i].status = 'completed';
-            if (i + 1 < newSteps.length) {
-              newSteps[i + 1].status = 'executing';
-            }
+            if (i > 0) newSteps[i - 1].status = 'completed';
+            newSteps[i].status = 'executing';
             return newSteps;
           });
+
+          // For transaction steps (steps 3, 4, 5), trigger wallet
+          if (i >= 2 && i <= 4) {
+            try {
+              console.log(`[v0] Triggering wallet transaction for step ${i + 1}:`, steps[i].name);
+              console.log('[v0] Wallet connected:', walletConnected);
+              console.log('[v0] Wallet address:', walletAddress);
+              
+              // Check if wallet is properly connected
+              if (!walletConnected || !walletAddress) {
+                throw new Error('Wallet not connected');
+              }
+
+              // This should prompt the user's wallet to confirm the transaction
+              console.log('[v0] About to call sendTransactionAsync...');
+              
+              // Get appropriate contract address based on asset type
+              const getContractAddress = (assetType: string): `0x${string}` => {
+                switch (assetType) {
+                  case 'STABLE':
+                    // In production: return DEMO_CONTRACTS.USDC as `0x${string}`;
+                    return walletAddress as `0x${string}`; // Demo: self-transaction
+                  case 'LIQUID':
+                    // In production: return DEMO_CONTRACTS.DEX_ROUTER as `0x${string}`;
+                    return walletAddress as `0x${string}`; // Demo: self-transaction
+                  case 'GROWTH':
+                    // In production: return DEMO_CONTRACTS.CRO_TOKEN as `0x${string}`;
+                    return walletAddress as `0x${string}`; // Demo: self-transaction
+                  default:
+                    return walletAddress as `0x${string}`;
+                }
+              };
+              
+              console.log(`[v0] Demo transaction for ${steps[i].name} (${steps[i].assetType})`);
+              const contractAddress = getContractAddress(steps[i].assetType);
+              
+              const txHash = await sendTransactionAsync({
+                to: contractAddress,
+                value: parseEther('0.001'), // Small test amount (0.001 TCRO)
+                data: '0x' // In production: encoded contract function calls
+              });
+
+              console.log('[v0] Transaction completed:', txHash);
+              
+            } catch (error) {
+              console.error('[v0] Wallet transaction error:', error);
+              
+              // If user rejects transaction, mark as failed and stop
+              setExecutionSteps(prevSteps => {
+                const newSteps = [...prevSteps];
+                newSteps[i].status = 'failed';
+                return newSteps;
+              });
+              
+              throw new Error('Transaction rejected by user');
+            }
+          } else {
+            // For non-transaction steps, just wait
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
         }
+
+        // Mark final step as completed
+        setExecutionSteps(prevSteps => {
+          const newSteps = [...prevSteps];
+          newSteps[newSteps.length - 1].status = 'completed';
+          return newSteps;
+        });
 
         // Add to activity log
         const logEntry: ActivityLog = {
@@ -477,13 +561,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [walletAddress]);
 
+  // Custom strategy setter that also adds to saved strategies
+  const setStrategy = useCallback((strategy: Strategy) => {
+    // Guard against undefined/null strategy
+    if (!strategy) {
+      console.warn('[v0] setStrategy called with undefined/null strategy');
+      return;
+    }
+
+    // Ensure the strategy has an ID
+    const strategyWithId = {
+      ...strategy,
+      id: (strategy as any).id || `strategy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: (strategy as any).createdAt || new Date().toISOString()
+    };
+    
+    setCurrentStrategy(strategyWithId);
+    
+    // Add to saved strategies if it's not already there
+    setSavedStrategies(prevStrategies => {
+      const existingIndex = prevStrategies.findIndex(s => s.id === strategyWithId.id);
+      if (existingIndex >= 0) {
+        // Update existing strategy
+        const updated = [...prevStrategies];
+        updated[existingIndex] = strategyWithId;
+        return updated;
+      } else {
+        // Add new strategy to the beginning of the list
+        return [strategyWithId, ...prevStrategies];
+      }
+    });
+
+    // Add to activity log for strategy creation
+    const logEntry: ActivityLog = {
+      id: `created-${strategyWithId.id}`,
+      timestamp: new Date(),
+      action: `Created ${strategyWithId.riskLevel} risk strategy`,
+      status: 'success',
+      strategy: strategyWithId,
+      details: `Created new strategy "${strategyWithId.intent}" with $${strategyWithId.amount} allocation.${strategyWithId.txHash ? ` Transaction: ${strategyWithId.txHash}` : ''}`,
+    };
+
+    setActivityLog(prevLog => {
+      // Check if this creation event already exists
+      const exists = prevLog.some(log => log.id === logEntry.id);
+      if (!exists) {
+        return [logEntry, ...prevLog];
+      }
+      return prevLog;
+    });
+  }, []);
+
   const value: AppContextType = {
     walletConnected,
     walletAddress,
     connectWallet,
     disconnectWallet,
     currentStrategy,
-    setStrategy: setCurrentStrategy,
+    setStrategy,
     clearStrategy: () => setCurrentStrategy(null),
     savedStrategies,
     loadStrategies,

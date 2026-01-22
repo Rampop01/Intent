@@ -58,10 +58,10 @@ export function parseIntent(intent: string): Strategy {
 
   return {
     intent,
-    amount,
+    amount: amount.toString(),
     riskLevel,
     allocation,
-    execution,
+    execution: execution === 'one-time' ? 'once' as const : execution as 'weekly',
     monitoring,
     explanation,
   };
@@ -101,21 +101,21 @@ This strategy will use ${executionDescription} and include ${monitoringDescripti
 export const PRESET_STRATEGIES: Record<string, Strategy> = {
   safe_save: {
     intent: 'Save $200 safely',
-    amount: 200,
+    amount: '200',
     riskLevel: 'low',
     allocation: {
       stable: 85,
       liquid: 15,
       growth: 0,
     },
-    execution: 'one-time',
+    execution: 'once',
     monitoring: 'weekly',
     explanation:
       'I will place your $200 into stable, secure assets for capital preservation. Focus on safety and liquidity with minimal growth exposure. Weekly monitoring ensures everything stays on track.',
   },
   balanced_invest: {
     intent: 'Invest $500 with balanced risk',
-    amount: 500,
+    amount: '500',
     riskLevel: 'medium',
     allocation: {
       stable: 40,
@@ -129,7 +129,7 @@ export const PRESET_STRATEGIES: Record<string, Strategy> = {
   },
   aggressive_growth: {
     intent: 'Invest $1000 aggressively for growth',
-    amount: 1000,
+    amount: '1000',
     riskLevel: 'high',
     allocation: {
       stable: 10,

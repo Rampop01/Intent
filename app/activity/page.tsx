@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { format, subDays, isWithinInterval } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { HydrationSafeWrapper } from '@/lib/hydration-utils';
 
 export default function ActivityPage() {
   const { 
@@ -111,16 +112,16 @@ export default function ActivityPage() {
   const pendingActivities = activityLog.filter(log => log.status === 'pending').length;
 
   return (
-    <>
+    <div className="flex min-h-screen bg-background">
       <Sidebar onLogout={disconnectWallet} walletAddress={walletAddress || undefined} />
       
-      <main className="min-h-screen bg-background">
+      <main className="flex-1 lg:ml-64">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <div className="px-4 py-4 md:px-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Activity</h1>
-              <p className="text-sm text-muted-foreground">Complete history of all your financial activities</p>
+          <div className="px-6 py-8 flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold text-foreground">Activity</h1>
+              <p className="text-lg text-muted-foreground">Complete history of all your financial activities</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -133,12 +134,16 @@ export default function ActivityPage() {
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              {walletConnected && <WalletConnect />}
+              {walletConnected && (
+                <div className="hidden md:block">
+                  <WalletConnect />
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        <div className="px-4 md:px-6 py-8">
+        <div className="px-6 py-8">
           {!walletConnected ? (
             <div className="text-center space-y-6 py-16">
               <div className="space-y-2">
@@ -150,49 +155,65 @@ export default function ActivityPage() {
               </div>
             </div>
           ) : (
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-8">
               {/* Stats Overview */}
-              <div className="grid gap-4 md:grid-cols-4">
-                <Card>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="border-blue-200/20 bg-blue-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ActivityIcon className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm text-muted-foreground">Total Activities</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Activities</p>
+                        <p className="text-3xl font-bold text-foreground">{totalActivities}</p>
+                      </div>
+                      <div className="p-3 bg-blue-500/20 rounded-xl">
+                        <ActivityIcon className="h-6 w-6 text-blue-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">{totalActivities}</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-green-200/20 bg-green-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-muted-foreground">Successful</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Successful</p>
+                        <p className="text-3xl font-bold text-foreground">{successfulActivities}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {totalActivities > 0 ? Math.round((successfulActivities / totalActivities) * 100) : 0}% success rate
+                        </p>
+                      </div>
+                      <div className="p-3 bg-green-500/20 rounded-xl">
+                        <CheckCircle2 className="h-6 w-6 text-green-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold text-green-600">{successfulActivities}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {totalActivities > 0 ? Math.round((successfulActivities / totalActivities) * 100) : 0}% success rate
-                    </p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-red-200/20 bg-red-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                      <span className="text-sm text-muted-foreground">Failed</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Failed</p>
+                        <p className="text-3xl font-bold text-foreground">{failedActivities}</p>
+                      </div>
+                      <div className="p-3 bg-red-500/20 rounded-xl">
+                        <AlertCircle className="h-6 w-6 text-red-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold text-red-600">{failedActivities}</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-yellow-200/20 bg-yellow-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-yellow-500" />
-                      <span className="text-sm text-muted-foreground">Upcoming</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
+                        <p className="text-3xl font-bold text-foreground">{upcomingActions.length}</p>
+                      </div>
+                      <div className="p-3 bg-yellow-500/20 rounded-xl">
+                        <Clock className="h-6 w-6 text-yellow-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold text-yellow-600">{upcomingActions.length}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -241,6 +262,7 @@ export default function ActivityPage() {
                       </Select>
 
                       {/* Date Range */}
+                      <HydrationSafeWrapper fallback={<Button variant="outline" className="gap-2"><CalendarIcon className="h-4 w-4" />Loading...</Button>}>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2">
@@ -269,6 +291,7 @@ export default function ActivityPage() {
                           />
                         </PopoverContent>
                       </Popover>
+                      </HydrationSafeWrapper>
                     </div>
 
                     {/* Export */}
@@ -378,6 +401,6 @@ export default function ActivityPage() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }

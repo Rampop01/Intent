@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
 import IntentSettlementABI from '../abi/IntentSettlement.json';
 
-// Contract address from deployment
-export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
+// Contract address from deployment on Cronos Testnet
+export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xd9fc6cC979472A5FA52750ae26805462E1638872';
 
 // Cronos Testnet configuration
 export const CRONOS_TESTNET = {
@@ -17,12 +17,12 @@ export const CRONOS_TESTNET = {
   },
 };
 
-// Token addresses (update with real testnet addresses)
+// Token addresses from deployment (from constructor args)
 export const TOKENS = {
-  USDC: '0x0000000000000000000000000000000000000000', // Update this
-  USDT: '0x0000000000000000000000000000000000000000', // Update this
-  DAI: '0x0000000000000000000000000000000000000000',  // Update this
-  WCRO: '0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23',
+  USDC: '0x0000000000000000000000000000000000000000', // Zero address from deployment
+  USDT: '0x0000000000000000000000000000000000000000', // Zero address from deployment  
+  DAI: '0x0000000000000000000000000000000000000000',  // Zero address from deployment
+  WCRO: '0x5C7F8A570d578ED84E63fdFA7b1eE72dEae1AE23',  // Real WCRO from deployment
 };
 
 // Get contract instance (read-only)

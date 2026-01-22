@@ -10,6 +10,7 @@ import { StrategyApproval } from '@/components/strategy-approval';
 import { ExecutionDisplay } from '@/components/execution-display';
 import { UserOnboarding } from '@/components/user-onboarding';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function AppPage() {
   const { 
@@ -21,10 +22,12 @@ export default function AppPage() {
     disconnectWallet,
     showApprovalFlow,
     setShowApprovalFlow,
-    clearStrategy
+    clearStrategy,
+    setStrategy
   } = useApp();
   
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const { toast } = useToast();
 
   // Check if user is new (simplified - in real app, check localStorage or user profile)
   useEffect(() => {
@@ -38,14 +41,42 @@ export default function AppPage() {
     setShowOnboarding(false);
   };
 
-  const handleStrategyGenerated = () => {
+  const handleStrategyGenerated = (strategy: any) => {
+    if (!strategy) {
+      console.error('[v0] No strategy provided to handleStrategyGenerated');
+      return;
+    }
+    
+    setStrategy(strategy);
     setShowApprovalFlow(true);
+    
+    // Show success toast
+    toast({
+      title: "Strategy Created Successfully! ✅",
+      description: `Your ${strategy?.riskLevel || 'unknown'} risk strategy for $${strategy?.amount || '0'} has been created and is ready for execution.`,
+      duration: 5000,
+    });
   };
 
   const handleApprove = async () => {
     if (currentStrategy) {
       setShowApprovalFlow(false);
+      
+      // Show execution started toast
+      toast({
+        title: "Strategy Execution Started 🚀",
+        description: `Executing your ${currentStrategy?.riskLevel || 'unknown'} risk strategy...`,
+        duration: 3000,
+      });
+      
       await executeStrategy(currentStrategy);
+      
+      // Show execution completed toast
+      toast({
+        title: "Strategy Executed Successfully! 🎉",
+        description: `Your strategy has been executed and is now active in your portfolio.`,
+        duration: 5000,
+      });
     }
   };
 

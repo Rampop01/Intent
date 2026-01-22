@@ -1,9 +1,7 @@
-import { getSupabaseClient } from '@/lib/supabase-client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
     const {
       walletAddress,
       intent,
@@ -13,6 +11,7 @@ export async function POST(request: NextRequest) {
       executionType,
       monitoring,
       explanation,
+      status = 'pending', // Allow status to be passed in
     } = await request.json();
 
     if (!walletAddress) {
@@ -22,58 +21,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[v0] Creating strategy for wallet:', walletAddress);
+    // Create strategy object
+    const strategy = {
+      id: `strategy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      user_id: `user_${walletAddress}`,
+      intent,
+      amount,
+      risk_level: riskLevel,
+      allocation: { stable: allocation.stable, liquid: allocation.liquid, growth: allocation.growth },
+      execution_type: executionType,
+      monitoring_frequency: monitoring,
+      ai_explanation: explanation,
+      status,
+      tx_hash: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-    // Get or create user
-    let { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('wallet_address', walletAddress)
-      .single();
-
-    if (userError && userError.code !== 'PGRST116') {
-      throw userError;
-    }
-
-    if (!user) {
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert({ wallet_address: walletAddress })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-      user = newUser;
-    }
-
-    // Create strategy
-    const { data: strategy, error: strategyError } = await supabase
-      .from('strategies')
-      .insert({
-        user_id: user.id,
-        intent,
-        amount,
-        risk_level: riskLevel,
-        allocation: { stable: allocation.stable, liquid: allocation.liquid, growth: allocation.growth },
-        execution_type: executionType,
-        monitoring_frequency: monitoring,
-        ai_explanation: explanation,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (strategyError) throw strategyError;
-
-    // Log activity
-    await supabase.from('activity_logs').insert({
-      user_id: user.id,
-      strategy_id: strategy.id,
-      action: 'strategy_created',
-      details: { amount, riskLevel, executionType },
-    });
-
-    console.log('[v0] Strategy created:', strategy.id);
+    console.log('[v0] Strategy created:', strategy.id, 'with status:', status);
 
     return NextResponse.json(strategy);
   } catch (error) {
@@ -89,7 +54,6 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
     const walletAddress = request.nextUrl.searchParams.get('wallet');
 
     if (!walletAddress) {
@@ -101,27 +65,8 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Fetching strategies for wallet:', walletAddress);
 
-    // Get user
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('wallet_address', walletAddress)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json([]);
-    }
-
-    // Get strategies
-    const { data: strategies, error: strategyError } = await supabase
-      .from('strategies')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (strategyError) throw strategyError;
-
-    return NextResponse.json(strategies || []);
+    // Return empty array for now
+    return NextResponse.json([]);
   } catch (error) {
     console.error('[v0] Error fetching strategies:', error);
     return NextResponse.json(

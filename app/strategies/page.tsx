@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { HydrationSafeWrapper } from '@/lib/hydration-utils';
 
 export default function StrategiesPage() {
   const { 
@@ -125,22 +126,26 @@ export default function StrategiesPage() {
   };
 
   return (
-    <>
+    <div className="flex min-h-screen bg-background">
       <Sidebar onLogout={disconnectWallet} walletAddress={walletAddress || undefined} />
       
-      <main className="min-h-screen bg-background">
+      <main className="flex-1 lg:ml-64">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <div className="px-4 py-4 md:px-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Strategies</h1>
-              <p className="text-sm text-muted-foreground">Manage all your AI-generated financial strategies</p>
+          <div className="px-6 py-8 flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold text-foreground">Strategies</h1>
+              <p className="text-lg text-muted-foreground">Manage all your AI-generated financial strategies</p>
             </div>
-            {walletConnected && <WalletConnect />}
+            {walletConnected && (
+              <div className="hidden md:block">
+                <WalletConnect />
+              </div>
+            )}
           </div>
         </header>
 
-        <div className="px-4 md:px-6 py-8">
+        <div className="px-6 py-8">
           {!walletConnected ? (
             <div className="text-center space-y-6 py-16">
               <div className="space-y-2">
@@ -152,52 +157,68 @@ export default function StrategiesPage() {
               </div>
             </div>
           ) : (
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-8">
               {/* Stats Overview */}
-              <div className="grid gap-4 md:grid-cols-4">
-                <Card>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="border-blue-200/20 bg-blue-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm text-muted-foreground">Total Strategies</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Strategies</p>
+                        <p className="text-3xl font-bold text-foreground">{savedStrategies.length}</p>
+                      </div>
+                      <div className="p-3 bg-blue-500/20 rounded-xl">
+                        <Target className="h-6 w-6 text-blue-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">{savedStrategies.length}</p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-green-200/20 bg-green-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <Play className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-muted-foreground">Active</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Active</p>
+                        <p className="text-3xl font-bold text-foreground">
+                          {savedStrategies.filter(s => s.status === 'approved').length}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-green-500/20 rounded-xl">
+                        <Play className="h-6 w-6 text-green-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {savedStrategies.filter(s => s.status === 'approved').length}
-                    </p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-orange-200/20 bg-orange-50/10">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <Pause className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm text-muted-foreground">Paused</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Paused</p>
+                        <p className="text-3xl font-bold text-foreground">
+                          {savedStrategies.filter(s => s.status === 'paused').length}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-orange-500/20 rounded-xl">
+                        <Pause className="h-6 w-6 text-orange-500" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">
-                      {savedStrategies.filter(s => s.status === 'paused').length}
-                    </p>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="border-primary/20 bg-primary/5">
                   <CardContent className="pt-6">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">Total Value</span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                        <p className="text-3xl font-bold text-foreground">
+                          ${savedStrategies.reduce((sum, s) => sum + parseFloat(s.amount), 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-primary/20 rounded-xl">
+                        <DollarSign className="h-6 w-6 text-primary" />
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">
-                      ${savedStrategies.reduce((sum, s) => sum + parseFloat(s.amount), 0).toLocaleString()}
-                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -205,8 +226,8 @@ export default function StrategiesPage() {
               {/* Controls */}
               <Card>
                 <CardContent className="pt-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                       {/* Search */}
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -214,14 +235,15 @@ export default function StrategiesPage() {
                           placeholder="Search strategies..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 w-full md:w-64"
+                          className="pl-10 w-full sm:w-64"
                         />
                       </div>
 
                       {/* Filters */}
+                      <HydrationSafeWrapper fallback={<div className="flex gap-2 h-9"><div className="w-36 h-9 bg-gray-100 rounded animate-pulse"></div><div className="w-32 h-9 bg-gray-100 rounded animate-pulse"></div><div className="w-44 h-9 bg-gray-100 rounded animate-pulse"></div></div>}>
                       <div className="flex gap-2">
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-36">
                             <SelectValue placeholder="Status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -246,7 +268,7 @@ export default function StrategiesPage() {
                         </Select>
 
                         <Select value={sortBy} onValueChange={setSortBy}>
-                          <SelectTrigger className="w-40">
+                          <SelectTrigger className="w-44">
                             <ArrowUpDown className="h-4 w-4 mr-2" />
                             <SelectValue />
                           </SelectTrigger>
@@ -258,10 +280,11 @@ export default function StrategiesPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                      </HydrationSafeWrapper>
                     </div>
 
                     <Link href="/app">
-                      <Button className="gap-2">
+                      <Button className="gap-2 px-6 py-3">
                         <Plus className="h-4 w-4" />
                         New Strategy
                       </Button>
@@ -273,40 +296,40 @@ export default function StrategiesPage() {
               {/* Strategies List */}
               {filteredStrategies.length === 0 ? (
                 <Card>
-                  <CardContent className="py-12 text-center">
-                    <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
+                  <CardContent className="py-16 text-center">
+                    <Target className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+                    <h3 className="text-xl font-semibold mb-3">
                       {savedStrategies.length === 0 ? 'No strategies yet' : 'No matching strategies'}
                     </h3>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                       {savedStrategies.length === 0 
-                        ? 'Create your first strategy to get started'
-                        : 'Try adjusting your filters or search terms'
+                        ? 'Create your first AI-powered strategy to start optimizing your DeFi portfolio'
+                        : 'Try adjusting your filters or search terms to find the strategies you\'re looking for'
                       }
                     </p>
                     {savedStrategies.length === 0 && (
                       <Link href="/app">
-                        <Button>Create Strategy</Button>
+                        <Button size="lg" className="px-8">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Strategy
+                        </Button>
                       </Link>
                     )}
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {filteredStrategies.map((strategy) => (
-                    <Card key={strategy.id} className="hover:shadow-md transition-shadow">
+                    <Card key={strategy.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20">
                       <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-3">
-                            {/* Header */}
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h3 className="font-semibold text-lg">${strategy.amount.toLocaleString()}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {strategy.intent}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
+                        <div className="space-y-4">
+                          {/* Header */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-4 mb-2">
+                                <h3 className="font-bold text-2xl text-foreground">
+                                  ${strategy.amount.toLocaleString()}
+                                </h3>
                                 <Badge className={getStatusColor(strategy.status || 'pending')}>
                                   {(strategy.status || 'pending').charAt(0).toUpperCase() + (strategy.status || 'pending').slice(1)}
                                 </Badge>
@@ -314,99 +337,101 @@ export default function StrategiesPage() {
                                   {strategy.riskLevel} risk
                                 </Badge>
                               </div>
+                              <p className="text-muted-foreground leading-relaxed">
+                                {strategy.intent}
+                              </p>
                             </div>
+                          </div>
 
-                            {/* Details */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">Execution:</span>
-                                <p className="font-medium capitalize">{strategy.execution}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Created:</span>
-                                <p className="font-medium">
-                                  {strategy.createdAt ? format(new Date(strategy.createdAt), 'MMM d, yyyy') : 'Unknown'}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Allocation:</span>
-                                <p className="font-medium">
-                                  {strategy.allocation.stable}%/{strategy.allocation.liquid}%/{strategy.allocation.growth}%
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Performance:</span>
-                                <div className="flex items-center gap-1">
-                                  {strategy.performance?.totalReturnPercent !== undefined ? (
-                                    <>
-                                      {strategy.performance.totalReturnPercent >= 0 ? (
-                                        <TrendingUp className="h-3 w-3 text-green-500" />
-                                      ) : (
-                                        <TrendingDown className="h-3 w-3 text-red-500" />
-                                      )}
-                                      <span className={`font-medium ${
-                                        strategy.performance.totalReturnPercent >= 0 ? 'text-green-600' : 'text-red-600'
-                                      }`}>
-                                        {strategy.performance.totalReturnPercent >= 0 ? '+' : ''}
-                                        {strategy.performance.totalReturnPercent.toFixed(2)}%
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="text-muted-foreground">No data</span>
-                                  )}
-                                </div>
+                          {/* Details Grid */}
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 py-4 border-t border-border">
+                            <div className="space-y-1">
+                              <span className="text-sm text-muted-foreground">Execution</span>
+                              <p className="font-semibold capitalize text-foreground">{strategy.execution}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-sm text-muted-foreground">Created</span>
+                              <p className="font-semibold text-foreground">
+                                {strategy.createdAt ? format(new Date(strategy.createdAt), 'MMM d, yyyy') : 'Unknown'}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-sm text-muted-foreground">Allocation</span>
+                              <p className="font-semibold text-foreground">
+                                {strategy.allocation.stable}%/{strategy.allocation.liquid}%/{strategy.allocation.growth}%
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-sm text-muted-foreground">Performance</span>
+                              <div className="flex items-center gap-1">
+                                {strategy.performance?.totalReturnPercent !== undefined ? (
+                                  <>
+                                    {strategy.performance.totalReturnPercent >= 0 ? (
+                                      <TrendingUp className="h-4 w-4 text-green-500" />
+                                    ) : (
+                                      <TrendingDown className="h-4 w-4 text-red-500" />
+                                    )}
+                                    <span className={`font-semibold ${
+                                      strategy.performance.totalReturnPercent >= 0 ? 'text-green-600' : 'text-red-600'
+                                    }`}>
+                                      {strategy.performance.totalReturnPercent >= 0 ? '+' : ''}
+                                      {strategy.performance.totalReturnPercent.toFixed(2)}%
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-muted-foreground font-medium">No data</span>
+                                )}
                               </div>
                             </div>
+                          </div>
 
-                            {/* Actions */}
-                            <Separator />
-                            <div className="flex items-center justify-between">
-                              <div className="flex gap-2">
-                                {strategy.status === 'approved' && strategy.execution !== 'once' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleAction('pause', strategy.id!)}
-                                    className="gap-2"
-                                  >
-                                    <Pause className="h-3 w-3" />
-                                    Pause
-                                  </Button>
-                                )}
-                                
-                                {strategy.status === 'paused' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleAction('resume', strategy.id!)}
-                                    className="gap-2"
-                                  >
-                                    <Play className="h-3 w-3" />
-                                    Resume
-                                  </Button>
-                                )}
-
+                          {/* Actions */}
+                          <div className="flex items-center justify-between pt-4 border-t border-border">
+                            <div className="flex gap-3">
+                              {strategy.status === 'approved' && strategy.execution !== 'once' && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => handleAction('modify', strategy.id!)}
+                                  onClick={() => handleAction('pause', strategy.id!)}
                                   className="gap-2"
                                 >
-                                  <Edit3 className="h-3 w-3" />
-                                  Modify
+                                  <Pause className="h-4 w-4" />
+                                  Pause
                                 </Button>
-                              </div>
+                              )}
+                              
+                              {strategy.status === 'paused' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleAction('resume', strategy.id!)}
+                                  className="gap-2"
+                                >
+                                  <Play className="h-4 w-4" />
+                                  Resume
+                                </Button>
+                              )}
 
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                onClick={() => handleAction('delete', strategy.id!)}
-                                className="gap-2 text-destructive hover:text-destructive"
+                                variant="outline"
+                                onClick={() => handleAction('modify', strategy.id!)}
+                                className="gap-2"
                               >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
+                                <Edit3 className="h-4 w-4" />
+                                Modify
                               </Button>
                             </div>
+
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleAction('delete', strategy.id!)}
+                              className="gap-2 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -418,6 +443,6 @@ export default function StrategiesPage() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }

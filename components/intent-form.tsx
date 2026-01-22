@@ -13,7 +13,7 @@ import { createVoiceService, getVoiceServiceStatus, VoiceService, VoiceServiceSt
 import { InlineLoader } from './ui/loader';
 
 interface IntentFormProps {
-  onStrategyGenerated: () => void;
+  onStrategyGenerated: (strategy: any) => void;
 }
 
 // Preset strategies
@@ -166,18 +166,26 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
       const parsedIntent = await response.json();
       console.log('[v0] Parsed intent result:', parsedIntent);
 
-      setStrategy({
+      // Validate the parsed intent has all required fields
+      if (!parsedIntent || !parsedIntent.amount || !parsedIntent.riskLevel || !parsedIntent.allocation) {
+        throw new Error('Invalid API response: missing required fields');
+      }
+
+      const strategyData = {
         intent,
         amount: parsedIntent.amount.toString(), // Convert to string
         riskLevel: parsedIntent.riskLevel,
         allocation: parsedIntent.allocation,
-        execution: parsedIntent.executionType,
-        monitoring: parsedIntent.monitoring,
-        explanation: parsedIntent.explanation,
-      });
+        execution: parsedIntent.executionType || 'once',
+        monitoring: parsedIntent.monitoring || 'weekly',
+        explanation: parsedIntent.explanation || 'AI-generated investment strategy',
+      };
+
+      console.log('[v0] Setting strategy:', strategyData);
+      setStrategy(strategyData);
 
       setIntent('');
-      onStrategyGenerated();
+      onStrategyGenerated(strategyData);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to parse intent';
       console.error('[v0] Error:', message);
@@ -189,9 +197,17 @@ export function IntentForm({ onStrategyGenerated }: IntentFormProps) {
 
   function handlePreset(key: string) {
     const strategy = PRESET_STRATEGIES[key as keyof typeof PRESET_STRATEGIES];
+    
+    if (!strategy) {
+      console.error('[v0] Invalid preset strategy key:', key);
+      setError(`Invalid strategy preset: ${key}`);
+      return;
+    }
+    
+    console.log('[v0] Using preset strategy:', key, strategy);
     setStrategy(strategy);
     setError(null);
-    onStrategyGenerated();
+    onStrategyGenerated(strategy);
   }
 
   return (
