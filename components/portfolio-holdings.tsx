@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,18 +39,38 @@ interface PortfolioPosition {
 }
 
 export function PortfolioHoldings() {
-  const { savedStrategies, walletAddress, activityLog } = useApp();
+  const { savedStrategies, walletAddress, activityLog, portfolioData, updatePortfolioData } = useApp();
   const [holdings, setHoldings] = useState<PortfolioPosition[]>([]);
-  const [totalValue, setTotalValue] = useState<number>(0);
-  const [totalChange, setTotalChange] = useState<number>(0);
+  const [totalValue, setTotalValue] = useState<number>(portfolioData.totalValue);
+  const [totalChange, setTotalChange] = useState<number>(portfolioData.totalChange);
   const [loading, setLoading] = useState(false);
+
+  // Initialize values from persistent portfolio data
+  useEffect(() => {
+    setTotalValue(portfolioData.totalValue);
+    setTotalChange(portfolioData.totalChange);
+  }, [portfolioData]);
 
   // Simulate real portfolio data based on executed strategies
   useEffect(() => {
     const generateHoldings = async () => {
-      if (!walletAddress || savedStrategies.length === 0) {
+      if (!walletAddress) {
         setHoldings([]);
         setTotalValue(0);
+        setTotalChange(0);
+        return;
+      }
+
+      // If no executed strategies, show empty state
+      if (activityLog.length === 0) {
+        console.log('[Portfolio] No executed strategies found - showing empty state');
+        setHoldings([]);
+        setTotalValue(0);
+        setTotalChange(0);
+        updatePortfolioData({
+          totalValue: 0,
+          totalChange: 0
+        });
         return;
       }
 
@@ -143,6 +163,12 @@ export function PortfolioHoldings() {
         // Calculate total change
         const totalChange24h = positions.reduce((sum, pos) => sum + pos.performance.change24h, 0);
         setTotalChange(totalChange24h);
+        
+        // Update persistent portfolio data
+        updatePortfolioData({
+          totalValue: portfolioValue,
+          totalChange: totalChange24h
+        });
 
       } catch (error) {
         console.error('[Portfolio] Failed to generate holdings:', error);
@@ -152,7 +178,7 @@ export function PortfolioHoldings() {
     };
 
     generateHoldings();
-  }, [savedStrategies, activityLog, walletAddress]);
+  }, [savedStrategies, activityLog, walletAddress, updatePortfolioData]);
 
   const getAssetTypeColor = (type: string) => {
     switch (type) {
@@ -169,6 +195,79 @@ export function PortfolioHoldings() {
       case 'active': return <TrendingUp className="h-3 w-3 text-green-600" />;
       case 'pending': return <RefreshCw className="h-3 w-3 text-orange-600 animate-spin" />;
       default: return null;
+    }
+  };
+
+  // Manual refresh function
+  const handleRefresh = useCallback(() => {
+    if (walletAddress && activityLog.length > 0) {
+      // Force regenerate holdings with current data
+      const generateHoldings = async () => {
+        setLoading(true);
+        // Add a small delay to show loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        try {
+          // This will trigger the main useEffect
+          window.location.reload();
+        } catch (error) {
+          console.error('[Portfolio] Manual refresh failed:', error);
+          setLoading(false);
+        }
+      };
+      generateHoldings();
+    }
+  }, [walletAddress, activityLog]);
+
+  // Handle external link clicks
+  const handleExternalLink = (holding: PortfolioPosition) => {
+    let url = '';
+    let description = '';
+    
+    switch (holding.tokenSymbol) {
+      case 'USDC':
+        url = 'https://testnet.cronoscan.com/token/0x8D5b93f1a82EE3c5A5F46ffd5F1C8b5b0F4e9A2D';
+        description = 'View USDC contract on Cronos Explorer';
+        break;
+      case 'USDT':
+        url = 'https://testnet.cronoscan.com/token/0x9D5b93f1a82EE3c5A5F46ffd5F1C8b5b0F4e9A3E';
+        description = 'View USDT contract on Cronos Explorer';
+        break;
+      case 'TCRO':
+        if (holding.platform === 'Cronos Validators') {
+          // Staking dashboard
+          url = 'https://cronos.org/validators';
+          description = 'View TCRO staking on Cronos Validators';
+        } else {
+          // Token info
+          url = 'https://www.coingecko.com/en/coins/crypto-com-chain';
+          description = 'View TCRO price and info on CoinGecko';
+        }
+        break;
+      case 'Various DeFi':
+      case 'DeFi':
+        if (holding.platform === 'VVS Finance') {
+          url = 'https://vvs.finance/farms';
+          description = 'View DeFi farming on VVS Finance';
+        } else {
+          url = 'https://vvs.finance/';
+          description = 'View DeFi protocols on VVS Finance';
+        }
+        break;
+      default:
+        // Fallback to platform or explorer
+        if (holding.platform === 'Multi-DEX') {
+          url = 'https://vvs.finance/swap';
+          description = 'View token swaps on VVS Finance';
+        } else {
+          url = 'https://testnet.cronoscan.com/';
+          description = 'View on Cronos Explorer';
+        }
+    }
+
+    if (url) {
+      console.log(`[Portfolio] Opening ${description}: ${url}`);
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -192,12 +291,35 @@ export function PortfolioHoldings() {
               <DollarSign className="h-5 w-5" />
               Portfolio Overview
             </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-              <RefreshCw className="h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {totalValue === 0 ? (
+            <div className="text-center py-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded-lg bg-muted/30">
+                  <p className="text-2xl font-bold text-muted-foreground">$0.00</p>
+                  <p className="text-sm text-muted-foreground">Total Value</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-muted/30">
+                  <p className="text-2xl font-bold text-muted-foreground">$0.00</p>
+                  <p className="text-sm text-muted-foreground">24h Change</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-muted/30">
+                  <p className="text-2xl font-bold text-muted-foreground">0</p>
+                  <p className="text-sm text-muted-foreground">Active Positions</p>
+                </div>
+              </div>
+              <div className="mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Your portfolio will appear here once you execute your first strategy
+                </p>
+              </div>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-muted/30">
               <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
@@ -214,6 +336,7 @@ export function PortfolioHoldings() {
               <p className="text-sm text-muted-foreground">Active Positions</p>
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -232,9 +355,19 @@ export function PortfolioHoldings() {
               <p className="text-sm text-muted-foreground">Loading portfolio data...</p>
             </div>
           ) : holdings.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No positions found</p>
-              <p className="text-sm text-muted-foreground mt-1">Execute a strategy to see your holdings here</p>
+            <div className="text-center py-12">
+              <div className="mb-4">
+                <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-lg font-medium text-muted-foreground">No Portfolio Positions Yet</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Create and execute a strategy to see your portfolio holdings here
+                </p>
+              </div>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>• Connect your wallet</p>
+                <p>• Create an investment strategy</p>
+                <p>• Execute the strategy to start building your portfolio</p>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -269,7 +402,13 @@ export function PortfolioHoldings() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleExternalLink(holding)}
+                      className="hover:bg-accent/50"
+                      title={`View ${holding.tokenSymbol} on ${holding.platform || 'explorer'}`}
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>

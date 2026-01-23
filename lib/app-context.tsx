@@ -6,6 +6,8 @@ import { parseEther } from 'viem';
 import { X402Order, X402Quote, X402Settlement, x402Client, isX402Enabled } from './x402-client';
 import { priceOracle, TokenBalances } from './price-oracle';
 import { balanceService } from './balance-service';
+import { performanceTracker } from './performance-tracker';
+import './force-cleanup'; // Force cleanup mock data immediately
 
 // Demo contract addresses for Cronos Testnet (for future production use)
 const DEMO_CONTRACTS = {
@@ -89,6 +91,12 @@ export interface ActivityLog {
   details: string;
 }
 
+export interface PortfolioData {
+  totalValue: number;
+  totalChange: number;
+  lastUpdated: string | null;
+}
+
 interface AppContextType {
   // Wallet
   walletConnected: boolean;
@@ -108,6 +116,7 @@ interface AppContextType {
   clearStrategy: () => void;
   savedStrategies: Strategy[];
   loadStrategies: () => Promise<void>;
+  updatePerformance: () => Promise<void>;
   pauseStrategy: (strategyId: string) => Promise<void>;
   resumeStrategy: (strategyId: string) => Promise<void>;
   modifyStrategy: (strategyId: string, updates: Partial<Strategy>) => Promise<void>;
@@ -119,6 +128,10 @@ interface AppContextType {
   
   // Activity Log
   activityLog: ActivityLog[];
+  
+  // Portfolio Data
+  portfolioData: PortfolioData;
+  updatePortfolioData: (data: Partial<PortfolioData>) => void;
   
   // Monitoring
   upcomingActions: UpcomingAction[];
@@ -138,7 +151,101 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// LocalStorage utilities with error handling
+const STORAGE_KEYS = {
+  ACTIVITY_LOG: 'intent_activity_log',
+  SAVED_STRATEGIES: 'intent_saved_strategies',
+  PORTFOLIO_DATA: 'intent_portfolio_data',
+  USER_BALANCES: 'intent_user_balances'
+};
+
+const loadFromStorage = (key: string, defaultValue: any): any => {
+  if (typeof window === 'undefined') return defaultValue;
+  
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : defaultValue;
+  } catch (error) {
+    console.warn(`Failed to load ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToStorage = (key: string, data: any): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.warn(`Failed to save ${key} to localStorage:`, error);
+  }
+};
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  // Clear any old mock data on startup - more aggressive cleanup
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      let needsCleanup = false;
+      
+      // Check activity log for mock data
+      const activityData = localStorage.getItem(STORAGE_KEYS.ACTIVITY_LOG);
+      if (activityData) {
+        try {
+          const logs = JSON.parse(activityData);
+          const hasMockData = logs.some((log: any) => 
+            log.strategy?.id?.startsWith('strategy_00') || 
+            log.id?.startsWith('exec_00') ||
+            log.strategy?.amount === '500' ||
+            log.strategy?.amount === '1000' ||
+            log.strategy?.amount === '300'
+          );
+          if (hasMockData) needsCleanup = true;
+        } catch (error) {
+          console.warn('Error checking activity log for mock data:', error);
+        }
+      }
+      
+      // Check saved strategies for mock data  
+      const strategiesData = localStorage.getItem(STORAGE_KEYS.SAVED_STRATEGIES);
+      if (strategiesData) {
+        try {
+          const strategies = JSON.parse(strategiesData);
+          const hasMockData = strategies.some((strategy: any) => 
+            strategy.id?.startsWith('strategy_00') ||
+            strategy.amount === '500' ||
+            strategy.amount === '1000' || 
+            strategy.amount === '300'
+          );
+          if (hasMockData) needsCleanup = true;
+        } catch (error) {
+          console.warn('Error checking strategies for mock data:', error);
+        }
+      }
+      
+      // Check portfolio data for suspicious values
+      const portfolioData = localStorage.getItem(STORAGE_KEYS.PORTFOLIO_DATA);
+      if (portfolioData) {
+        try {
+          const portfolio = JSON.parse(portfolioData);
+          // Check for known mock values (1800, 1881, etc.)
+          if (portfolio.totalValue > 1000 && portfolio.totalValue < 2000) {
+            needsCleanup = true;
+          }
+        } catch (error) {
+          console.warn('Error checking portfolio data:', error);
+        }
+      }
+      
+      if (needsCleanup) {
+        console.log('[Cleanup] Removing ALL mock data from localStorage');
+        localStorage.removeItem(STORAGE_KEYS.ACTIVITY_LOG);
+        localStorage.removeItem(STORAGE_KEYS.SAVED_STRATEGIES);
+        localStorage.removeItem(STORAGE_KEYS.PORTFOLIO_DATA);
+        localStorage.removeItem(STORAGE_KEYS.USER_BALANCES);
+      }
+    }
+  }, []);
+
   // Get real wallet connection status from wagmi
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
@@ -151,17 +258,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentStrategy, setCurrentStrategy] = useState<Strategy | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
-  const [activityLog, setActivityLog] = useState<ActivityLog[]>([]);
-  const [savedStrategies, setSavedStrategies] = useState<Strategy[]>([]);
+  
+  // Initialize state with localStorage data, but filter out mock data
+  const [activityLog, setActivityLog] = useState<ActivityLog[]>(() => {
+    const stored = loadFromStorage(STORAGE_KEYS.ACTIVITY_LOG, []);
+    // Filter out any mock data that might have loaded
+    return stored.filter((log: any) => 
+      !log.strategy?.id?.startsWith('strategy_00') && 
+      !log.id?.startsWith('exec_00') &&
+      log.strategy?.amount !== '500' &&
+      log.strategy?.amount !== '1000' &&
+      log.strategy?.amount !== '300'
+    );
+  });
+  
+  const [savedStrategies, setSavedStrategies] = useState<Strategy[]>(() => {
+    const stored = loadFromStorage(STORAGE_KEYS.SAVED_STRATEGIES, []);
+    // Filter out any mock data that might have loaded  
+    return stored.filter((strategy: any) =>
+      !strategy.id?.startsWith('strategy_00') &&
+      strategy.amount !== '500' &&
+      strategy.amount !== '1000' && 
+      strategy.amount !== '300'
+    );
+  });
   const [upcomingActions, setUpcomingActions] = useState<UpcomingAction[]>([]);
   const [showApprovalFlow, setShowApprovalFlow] = useState(false);
 
+  // Portfolio state with persistence
+  const [portfolioData, setPortfolioData] = useState<PortfolioData>(() => 
+    loadFromStorage(STORAGE_KEYS.PORTFOLIO_DATA, {
+      totalValue: 0,
+      totalChange: 0,
+      lastUpdated: null
+    })
+  );
+
   // New state for balances and pricing
-  const [userBalances, setUserBalances] = useState<TokenBalances>({
-    tcro: '0',
-    usdc: '0', 
-    usdt: '0'
-  });
+  const [userBalances, setUserBalances] = useState<TokenBalances>(() => 
+    loadFromStorage(STORAGE_KEYS.USER_BALANCES, {
+      tcro: '0',
+      usdc: '0', 
+      usdt: '0'
+    })
+  );
   const [tcroPrice, setTcroPrice] = useState<number>(0.16);
 
   // Load strategies when wallet connects
@@ -172,9 +312,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.log('[v0] Loading strategies for wallet:', walletAddress);
       const response = await fetch(`/api/strategies?wallet=${walletAddress}`);
       const strategies = await response.json();
+      console.log('[v0] Loaded strategies from API:', strategies);
       setSavedStrategies(strategies || []);
     } catch (error) {
       console.error('[v0] Failed to load strategies:', error);
+    }
+  }, [walletAddress]);
+
+  // Update performance for all strategies
+  const updatePerformance = useCallback(async () => {
+    if (savedStrategies.length === 0) return;
+
+    try {
+      console.log('[Performance] Updating performance for', savedStrategies.length, 'strategies');
+      const updatedStrategies = await performanceTracker.updateAllStrategiesPerformance(savedStrategies);
+      setSavedStrategies(updatedStrategies);
+      console.log('[Performance] Performance updated successfully');
+    } catch (error) {
+      console.error('[Performance] Failed to update performance:', error);
     }
   }, [walletAddress]);
 
@@ -207,6 +362,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return await balanceService.validateSufficientBalance(walletAddress, usdAmount);
   }, [walletAddress]);
 
+  // Portfolio data management
+  const updatePortfolioData = useCallback((data: Partial<PortfolioData>) => {
+    setPortfolioData(prev => {
+      const newData = { ...prev, ...data, lastUpdated: new Date().toISOString() };
+      saveToStorage(STORAGE_KEYS.PORTFOLIO_DATA, newData);
+      return newData;
+    });
+  }, []);
+
+  // Auto-save activity log and strategies to localStorage
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.ACTIVITY_LOG, activityLog);
+  }, [activityLog]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.SAVED_STRATEGIES, savedStrategies);
+  }, [savedStrategies]);
+
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.USER_BALANCES, userBalances);
+  }, [userBalances]);
+
   // Load strategies and balances on mount and when wallet changes
   useEffect(() => {
     if (walletConnected && walletAddress) {
@@ -217,6 +394,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserBalances({ tcro: '0', usdc: '0', usdt: '0' });
     }
   }, [walletConnected, walletAddress, loadStrategies, refreshBalances]);
+
+  // Auto-update performance every 30 seconds when strategies exist
+  useEffect(() => {
+    if (savedStrategies.length === 0) return;
+
+    const interval = setInterval(() => {
+      console.log('[Performance] Auto-updating performance...');
+      updatePerformance();
+    }, 30000); // Update every 30 seconds
+
+    // Initial update
+    updatePerformance();
+
+    return () => clearInterval(interval);
+  }, [savedStrategies.length, updatePerformance]);
 
   const connectWallet = useCallback(async (address: string) => {
     console.log('[v0] Wallet connection handled by wagmi:', address);
@@ -430,8 +622,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         setActivityLog(prevLog => [logEntry, ...prevLog]);
 
-        // Reload strategies
+        // Reload strategies and update performance
         await loadStrategies();
+        
+        // Calculate initial performance for the new strategy
+        setTimeout(() => {
+          updatePerformance();
+        }, 1000);
       } catch (error) {
         console.error('[v0] Execution error:', error);
         setActivityLog(prevLog => [
@@ -692,6 +889,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     clearStrategy: () => setCurrentStrategy(null),
     savedStrategies,
     loadStrategies,
+    updatePerformance,
     pauseStrategy,
     resumeStrategy,
     modifyStrategy,
@@ -699,6 +897,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     executionSteps,
     executeStrategy,
     activityLog,
+    portfolioData,
+    updatePortfolioData,
     upcomingActions,
     loadUpcomingActions,
     showApprovalFlow,

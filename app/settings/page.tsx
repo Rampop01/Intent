@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletConnectCompact } from '@/components/wallet-connect-compact';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -105,6 +106,42 @@ export default function SettingsPage() {
     setHasChanges(false);
   };
 
+  const handleResetPortfolioData = () => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm('This will IMMEDIATELY clear ALL cached data including the $1,806 amounts you are seeing. Continue?');
+      if (confirmed) {
+        // Nuclear option - clear ALL storage that could contain mock data
+        const allKeys = Object.keys(localStorage);
+        let removedCount = 0;
+        
+        allKeys.forEach(key => {
+          if (key.startsWith('intent_') || 
+              key.includes('strategy') || 
+              key.includes('portfolio') || 
+              key.includes('activity') ||
+              key.includes('1800') ||
+              key.includes('1806') ||
+              key.includes('exec_') ||
+              key.includes('strategy_00')) {
+            localStorage.removeItem(key);
+            removedCount++;
+          }
+        });
+        
+        // Also force clear specific problematic values
+        ['intent_portfolio_data', 'intent_activity_log', 'intent_saved_strategies', 'intent_user_balances'].forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
+        console.log(`[Settings] Removed ${removedCount} localStorage entries`);
+        alert(`Cleared ${removedCount} cached data entries. The $1,806 values should now be gone!`);
+        
+        // Force immediate refresh
+        window.location.reload();
+      }
+    }
+  };
+
   const exportSettings = () => {
     const settings = { notifications, general, security };
     const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -180,7 +217,7 @@ export default function SettingsPage() {
               )}
               {walletConnected && (
                 <div className="hidden md:block">
-                  <WalletConnect />
+                  <WalletConnectCompact />
                 </div>
               )}
             </div>
@@ -551,6 +588,30 @@ export default function SettingsPage() {
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Data Management */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        Data Management
+                      </CardTitle>
+                      <CardDescription>
+                        Reset or clear application data (for testing purposes)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Clear $1,806 Mock Data</p>
+                          <p className="text-sm text-muted-foreground">Remove the fake $1,806 invested amounts and show only real data</p>
+                        </div>
+                        <Button variant="destructive" size="sm" onClick={handleResetPortfolioData}>
+                          Clear Now
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

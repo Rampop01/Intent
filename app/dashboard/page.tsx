@@ -2,7 +2,9 @@
 
 import { useApp } from '@/lib/app-context';
 import { ActivityTimeline } from '@/components/activity-timeline';
+import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletConnectCompact } from '@/components/wallet-connect-compact';
 import { PortfolioHoldings } from '@/components/portfolio-holdings';
 import { X402SettlementDisplay } from '@/components/x402-settlement-display';
 import { BalanceDisplay } from '@/components/balance-display';
@@ -14,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 import { 
-  ArrowLeft, 
+  ArrowLeft,
   TrendingUp, 
   TrendingDown,
   DollarSign, 
@@ -26,8 +28,6 @@ import {
   Play,
   Edit3,
   Settings,
-  Bell,
-  BellOff,
   Target,
   Shield
 } from 'lucide-react';
@@ -36,42 +36,64 @@ import { useState, useEffect } from 'react';
 export default function DashboardPage() {
   const { 
     walletConnected, 
+    walletAddress,
     activityLog, 
     savedStrategies,
+    portfolioData,
     upcomingActions,
     loadUpcomingActions,
     loadStrategies,
+    updatePerformance,
     pauseStrategy,
-    resumeStrategy
+    resumeStrategy,
+    disconnectWallet
   } = useApp();
-  
-  const [notifications, setNotifications] = useState(true);
 
-  // Load data on mount
+  // Load data on mount and update performance
   useEffect(() => {
     if (walletConnected) {
       loadStrategies();
       loadUpcomingActions();
+      // Update performance when dashboard loads
+      setTimeout(() => updatePerformance(), 1000);
     }
-  }, [walletConnected, loadStrategies, loadUpcomingActions]);
+  }, [walletConnected, loadStrategies, loadUpcomingActions, updatePerformance]);
 
-  // Calculate enhanced stats
-  const totalDeployed = activityLog.reduce((sum, log) => sum + parseFloat(log.strategy.amount), 0);
-  const successfulExecutions = activityLog.filter(log => log.status === 'success').length;
-  const activeStrategies = savedStrategies.filter(s => s.status === 'approved' && s.execution !== 'once').length;
-  const pausedStrategies = savedStrategies.filter(s => s.status === 'paused').length;
+  // Calculate enhanced stats - only from REAL executed strategies
+  const realExecutedStrategies = activityLog.filter(log => 
+    log.status === 'success' && 
+    !log.strategy?.id?.startsWith('strategy_00') && // Exclude old mock data
+    !log.id?.startsWith('exec_00') // Exclude old mock executions
+  );
   
-  // Performance calculation
-  const totalPerformance = savedStrategies.reduce((sum, strategy) => {
+  const totalDeployed = realExecutedStrategies.reduce((sum, log) => sum + parseFloat(log.strategy.amount), 0);
+  console.log('[Dashboard] Real executed strategies:', realExecutedStrategies, 'Real total deployed:', totalDeployed);
+  
+  const successfulExecutions = realExecutedStrategies.length;
+  
+  // Filter out any mock strategies that might still be in savedStrategies
+  const realSavedStrategies = savedStrategies.filter(strategy => 
+    !strategy.id?.startsWith('strategy_00')
+  );
+  
+  const activeStrategies = realSavedStrategies.filter(s => s.status === 'approved' && s.execution !== 'once').length;
+  const pausedStrategies = realSavedStrategies.filter(s => s.status === 'paused').length;
+  
+  // Performance calculation using persistent portfolio data (only if we have real deployed amount)
+  const totalPerformance = totalDeployed > 0 ? (portfolioData?.totalChange || 0) : 0;
+  const performancePercent = totalDeployed > 0 ? (totalPerformance / totalDeployed) * 100 : 0;
+  
+  // Fallback to strategy-based calculation if no portfolio data
+  const fallbackPerformance = realSavedStrategies.reduce((sum, strategy) => {
     return sum + (strategy.performance?.totalReturn || 0);
   }, 0);
   
-  const avgPerformancePercent = savedStrategies.length > 0 
-    ? savedStrategies.reduce((sum, strategy) => sum + (strategy.performance?.totalReturnPercent || 0), 0) / savedStrategies.length
-    : 0;
+  const avgPerformancePercent = realSavedStrategies.length > 0 
+    ? realSavedStrategies.reduce((sum, strategy) => sum + (strategy.performance?.totalReturnPercent || 0), 0) / realSavedStrategies.length
+    : performancePercent;
 
-  // Risk distribution
-  const riskDistribution = savedStrategies.reduce((acc, strategy) => {
+  // Risk distribution using real strategies only
+  const riskDistribution = realSavedStrategies.reduce((acc, strategy) => {
     acc[strategy.riskLevel] = (acc[strategy.riskLevel] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
@@ -81,37 +103,28 @@ export default function DashboardPage() {
   const overdueActions = upcomingActions.filter(action => action.status === 'overdue').length;
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/app" className="flex items-center gap-2 hover:opacity-75 transition">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-semibold">Back to App</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setNotifications(!notifications)}
-              className="gap-2"
-            >
-              {notifications ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-              Notifications
-            </Button>
-            <WalletConnect />
+    <div className="flex min-h-screen bg-background">
+      <Sidebar onLogout={disconnectWallet} walletAddress={walletAddress || undefined} />
+      
+      <main className="flex-1 lg:ml-64">
+        {/* Header */}
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+          <div className="px-6 py-8 flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-lg text-muted-foreground">
+                Monitor your strategies, performance, and upcoming actions
+              </p>
+            </div>
+            {walletConnected && (
+              <div className="hidden md:block">
+                <WalletConnectCompact />
+              </div>
+            )}
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
-          <p className="text-lg text-muted-foreground">
-            Monitor your strategies, performance, and upcoming actions
-          </p>
-        </div>
+        <div className="px-6 py-8">{/* Rest of content */}
 
         {/* Balance Overview - Always visible when wallet connected */}
         {walletConnected && (
@@ -131,8 +144,8 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-foreground mb-2">Total Performance</h3>
-                  <div className={`text-3xl font-bold ${avgPerformancePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {avgPerformancePercent >= 0 ? '+' : ''}{avgPerformancePercent.toFixed(2)}%
+                  <div className={`text-3xl font-bold ${performancePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {performancePercent >= 0 ? '+' : ''}{performancePercent.toFixed(2)}%
                   </div>
                   <p className="text-sm text-muted-foreground">
                     ${totalPerformance >= 0 ? '+' : ''}{totalPerformance.toLocaleString()} total
@@ -198,7 +211,7 @@ export default function DashboardPage() {
                 <CardContent>
                   <div className="text-2xl font-bold text-foreground">${totalDeployed.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Across {savedStrategies.length} {savedStrategies.length === 1 ? 'strategy' : 'strategies'}
+                    Across {realSavedStrategies.length} {realSavedStrategies.length === 1 ? 'strategy' : 'strategies'}
                   </p>
                 </CardContent>
               </Card>
@@ -414,7 +427,8 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }

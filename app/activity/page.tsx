@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletConnectCompact } from '@/components/wallet-connect-compact';
 import { ActivityTimeline } from '@/components/activity-timeline';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,7 +137,7 @@ export default function ActivityPage() {
               </Button>
               {walletConnected && (
                 <div className="hidden md:block">
-                  <WalletConnect />
+                  <WalletConnectCompact />
                 </div>
               )}
             </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletConnectCompact } from '@/components/wallet-connect-compact';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -237,7 +238,7 @@ export default function TransactionsPage() {
               </Button>
               {walletConnected && (
                 <div className="hidden md:block">
-                  <WalletConnect />
+                  <WalletConnectCompact />
                 </div>
               )}
             </div>

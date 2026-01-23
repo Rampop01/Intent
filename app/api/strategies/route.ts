@@ -65,8 +65,11 @@ export async function GET(request: NextRequest) {
 
     console.log('[v0] Fetching strategies for wallet:', walletAddress);
 
-    // Return empty array for now
-    return NextResponse.json([]);
+    // Return empty array - no mock data, only real strategies created by users
+    // In a real implementation, this would query a database for user's actual strategies
+    const strategies: any[] = [];
+
+    return NextResponse.json(strategies);
   } catch (error) {
     console.error('[v0] Error fetching strategies:', error);
     return NextResponse.json(

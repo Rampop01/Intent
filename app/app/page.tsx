@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useApp } from '@/lib/app-context';
 import { Sidebar } from '@/components/sidebar';
 import { WalletConnect } from '@/components/wallet-connect';
+import { WalletConnectCompact } from '@/components/wallet-connect-compact';
 import { IntentForm } from '@/components/intent-form';
 import { StrategyDisplay } from '@/components/strategy-display';
 import { StrategyApproval } from '@/components/strategy-approval';
@@ -98,14 +99,17 @@ export default function AppPage() {
   }
 
   return (
-    <>
+    <div className="flex min-h-screen bg-background">
       <Sidebar onLogout={disconnectWallet} walletAddress={walletAddress || undefined} />
       
-      <main className="min-h-screen bg-background">
+      <main className="flex-1 lg:ml-64">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <div className="px-4 py-4 md:px-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-foreground">New Strategy</h1>
+          <div className="px-6 py-8 flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-4xl font-bold text-foreground">New Strategy</h1>
+              <p className="text-lg text-muted-foreground">Create your AI-powered DeFi strategy</p>
+            </div>
             <div className="flex items-center gap-3">
               {walletConnected && (
                 <Link href="/dashboard">
@@ -114,13 +118,16 @@ export default function AppPage() {
                   </Button>
                 </Link>
               )}
-              {walletConnected && <WalletConnect />}
+              {walletConnected && (
+                <div className="hidden md:block">
+                  <WalletConnectCompact />
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        {/* Main Content */}
-        <div className="px-4 md:px-6 py-8">
+        <div className="px-6 py-8">{/* Content wrapper */}
           {!walletConnected ? (
             <div className="text-center space-y-6 py-16">
               <div className="space-y-2">
@@ -172,6 +179,6 @@ export default function AppPage() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }
