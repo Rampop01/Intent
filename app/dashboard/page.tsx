@@ -5,7 +5,6 @@ import { ActivityTimeline } from '@/components/activity-timeline';
 import { WalletConnect } from '@/components/wallet-connect';
 import { PortfolioHoldings } from '@/components/portfolio-holdings';
 import { X402SettlementDisplay } from '@/components/x402-settlement-display';
-import { WithdrawalManager } from '@/components/withdrawal-manager';
 import { BalanceDisplay } from '@/components/balance-display';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,11 +142,11 @@ export default function DashboardPage() {
               <Separator className="my-4" />
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-3">
-                  💡 Your money is working for you across multiple DeFi protocols. Use the "Withdraw Funds" tab below to get your money back anytime.
+                  💡 Your money is working for you across multiple DeFi protocols. Your strategies automatically manage positions and handle exits based on your risk settings.
                 </p>
                 <Button variant="outline" className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Withdraw Your Funds
+                  View Strategy Performance
                 </Button>
               </div>
             </CardContent>
@@ -357,16 +356,12 @@ export default function DashboardPage() {
                 Investment Tracking
               </h2>
               <Tabs defaultValue="portfolio" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="portfolio">Portfolio Holdings</TabsTrigger>
-                  <TabsTrigger value="withdraw">Withdraw Funds</TabsTrigger>
                   <TabsTrigger value="settlements">x402 Settlements</TabsTrigger>
                 </TabsList>
                 <TabsContent value="portfolio" className="mt-6">
                   <PortfolioHoldings />
-                </TabsContent>
-                <TabsContent value="withdraw" className="mt-6">
-                  <WithdrawalManager />
                 </TabsContent>
                 <TabsContent value="settlements" className="mt-6">
                   <X402SettlementDisplay />

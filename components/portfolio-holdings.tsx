@@ -15,8 +15,7 @@ import {
   Zap,
   RefreshCw,
   ExternalLink,
-  Eye,
-  ArrowDownLeft
+  Eye
 } from 'lucide-react';
 import { useApp } from '@/lib/app-context';
 import { priceOracle } from '@/lib/price-oracle';
@@ -270,15 +269,6 @@ export function PortfolioHoldings() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => {/* Will be handled by withdrawal manager */}}
-                    >
-                      <ArrowDownLeft className="h-3 w-3" />
-                      Withdraw
-                    </Button>
                     <Button variant="ghost" size="sm">
                       <ExternalLink className="h-4 w-4" />
                     </Button>
